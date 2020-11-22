@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1.0)
 
-project(TheForge LANGUAGES CXX)
+project(TheForge LANGUAGES C CXX)
 
 set(TF_RENDERER "DIRECT3D12")
 set(TF_LINK_LIBS)
@@ -64,8 +64,19 @@ set(TF_SRC_SPIRVTOOLS
 	Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_reflect.cpp
 )
 
+# OS library - Windows
+set(TF_SRC_OS_WIN
+	Common_3/OS/Windows/WindowsBase.cpp
+	Common_3/OS/Windows/WindowsFileSystem.cpp
+	Common_3/OS/Windows/WindowsLog.cpp
+	Common_3/OS/Windows/WindowsStackTraceDump.h
+	Common_3/OS/Windows/WindowsStackTraceDump.cpp
+	Common_3/OS/Windows/WindowsThread.cpp
+	Common_3/OS/Windows/WindowsTime.cpp
+)
+
 # OS library
-set(TF_SRC_OS_LIBRARY
+set(TF_SRC_OS
 	# basisu
 	Common_3/ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder.cpp
 	
@@ -172,15 +183,32 @@ set(TF_SRC_OS_LIBRARY
 	Common_3/OS/Profiler/ProfilerBase.cpp
 	Common_3/OS/Profiler/ProfilerHTML.h
 	Common_3/OS/Profiler/ProfilerWidgetsUI.cpp
-	
-	# OS / Windows
-	Common_3/OS/Windows/WindowsBase.cpp
-	Common_3/OS/Windows/WindowsFileSystem.cpp
-	Common_3/OS/Windows/WindowsLog.cpp
-	Common_3/OS/Windows/WindowsStackTraceDump.h
-	Common_3/OS/Windows/WindowsStackTraceDump.cpp
-	Common_3/OS/Windows/WindowsThread.cpp
-	Common_3/OS/Windows/WindowsTime.cpp
+)
+
+# OS library - Darwin
+set(TF_SRC_OS_OSX
+	Common_3/OS/Darwin/CocoaFileSystem.mm
+	Common_3/OS/Darwin/DarwinLog.cpp
+	Common_3/OS/Darwin/DarwinThread.cpp
+	Common_3/OS/Darwin/macOSAppDelegate.h
+	Common_3/OS/Darwin/macOSAppDelegate.m
+	Common_3/OS/Darwin/macOSBase.mm
+)
+
+# OS library - iOS
+set(TF_SRC_OS_IOS
+	Common_3/OS/Darwin/iOSAppDelegate.h
+	Common_3/OS/Darwin/iOSAppDelegate.m
+	Common_3/OS/Darwin/iOSBase.mm
+)
+
+# OS library - Linux
+set(TF_SRC_OS_LIN
+	Common_3/OS/Linux/LinuxBase.cpp
+	Common_3/OS/Linux/LinuxFileSystem.cpp
+	Common_3/OS/Linux/LinuxLog.cpp
+	Common_3/OS/Linux/LinuxThread.cpp
+	Common_3/OS/Linux/LinuxTime.cpp
 )
 
 set(TF_LIB_WIN32_EXTRA
@@ -213,7 +241,7 @@ add_executable(${TF_TARGET_NAME}
 source_group(Renderer FILES ${TF_SRC_RENDERER_COMMON})
 
 if (NOT APPLE)
-	# vulkan
+	# vulkan renderer
 	find_package(Vulkan)
 	if (NOT Vulkan_FOUND)
 		if (TF_RENDERER STREQUAL "VULKAN")
@@ -229,16 +257,16 @@ if (NOT APPLE)
 endif()
 
 if (APPLE)
-	# metal
+	# metal renderer
 	add_library(RendererMetal ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_METAL})
 	target_compile_definitions(RendererMetal PUBLIC METAL)
 elseif (WIN32)
-	# dx11
+	# dx11 renderer
 	add_library(RendererDX11 ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_D3D11})
 	target_compile_definitions(RendererDX11 PUBLIC DIRECT3D11)
 	target_link_libraries(RendererDX11 ${TF_LIB_WIN32_EXTRA})
 	
-	# dx12
+	# dx12 renderer
 	add_library(RendererDX12 ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_D3D12})
 	target_compile_definitions(RendererDX12 PUBLIC DIRECT3D12)
 	target_link_libraries(RendererDX12 ${TF_LIB_WIN32_EXTRA})
@@ -248,7 +276,6 @@ elseif (WIN32)
 		add_custom_command(TARGET ${TF_TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${tf_bin} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>)
 		#add_custom_command(TARGET ${TF_TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE_DIR:${TF_TARGET_NAME}>../ ${tf_bin})
 	endforeach()
-elseif (UNIX)
 else()
 	message(ERROR "Unsupported platform")
 endif()
@@ -266,11 +293,19 @@ endif()
 #
 # OS (platform library)
 
-add_library(OS ${TF_SRC_OS_LIBRARY})
+if (APPLE)
+	list(APPEND TF_SRC_OS ${TF_SRC_OS_OSX})
+elseif (UNIX)
+	list(APPEND TF_SRC_OS ${TF_SRC_OS_LIN})
+elseif (WIN32)
+	list(APPEND TF_SRC_OS ${TF_SRC_OS_WIN})
+endif()
+
+add_library(OS ${TF_SRC_OS})
 target_compile_definitions(OS PUBLIC ${TF_RENDERER})
 target_link_libraries(OS ${TF_LINK_LIBS})
 
-foreach(tf_source IN ITEMS ${TF_SRC_OS_LIBRARY})
+foreach(tf_source IN ITEMS ${TF_SRC_OS})
     get_filename_component(tf_path "${tf_source}" PATH)
 	string(REGEX REPLACE "^.*\/([^\/]+)$" "\\1" tf_group_path "${tf_path}")
     source_group("${tf_group_path}" FILES "${tf_source}")

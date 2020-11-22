@@ -37,8 +37,14 @@ if (GAINPUT_BUILD_STATIC)
 endif (GAINPUT_BUILD_STATIC)
 
 if(WIN32)
-	target_link_libraries(gainput ${XINPUT} ws2_32)
-	target_link_libraries(gainputstatic ${XINPUT} ws2_32)
+	if (GAINPUT_BUILD_SHARED)
+		target_link_libraries(gainput ${XINPUT} ws2_32)
+	endif()
+
+	if (GAINPUT_BUILD_STATIC)
+		target_link_libraries(gainputstatic ${XINPUT} ws2_32)
+	endif()
+
 	add_definitions(-DGAINPUT_LIB_DYNAMIC=1)
 elseif(ANDROID)
 	target_link_libraries(gainputstatic native_app_glue log android)

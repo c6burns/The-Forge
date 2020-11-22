@@ -212,18 +212,20 @@ add_executable(${TF_TARGET_NAME}
 
 source_group(Renderer FILES ${TF_SRC_RENDERER_COMMON})
 
-# vulkan
-find_package(Vulkan)
-if (NOT Vulkan_FOUND)
-	if (TF_RENDERER STREQUAL "VULKAN")
-		message(ERROR "Vulkan SDK was not found")
+if (NOT APPLE)
+	# vulkan
+	find_package(Vulkan)
+	if (NOT Vulkan_FOUND)
+		if (TF_RENDERER STREQUAL "VULKAN")
+			message(ERROR "Vulkan SDK was not found")
+		else()
+			message(WARNING "Vulkan SDK was not found")
+		endif()
 	else()
-		message(WARNING "Vulkan SDK was not found")
+		add_library(RendererVulkan ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_VULKAN})
+		target_compile_definitions(RendererVulkan PUBLIC VULKAN)
+		target_link_libraries(RendererVulkan Vulkan::Vulkan)
 	endif()
-else()
-	add_library(RendererVulkan ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_VULKAN})
-	target_compile_definitions(RendererVulkan PUBLIC VULKAN)
-	target_link_libraries(RendererVulkan Vulkan::Vulkan)
 endif()
 
 if (APPLE)

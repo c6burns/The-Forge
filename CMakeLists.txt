@@ -3,34 +3,12 @@ project(TheForge LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 14)
 
 #
-# options
+# setup
 
-set(TF_RENDERER "DIRECT3D12")
+set(TF_RENDERER "VULKAN")
 set(TF_LINK_LIBS)
 set(TF_FLAGS)
 set(TF_TARGET_NAME Visibility_Buffer)
-
-#
-# setup
-
-if (APPLE)
-	set(TF_RENDERER "METAL")
-	set(TF_FLAGS -fobjc-arc -x objective-c)
-	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -x objective-c")
-	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -x objective-c++")
-	list(APPEND TF_LINK_LIBS 
-		"-framework Foundation"
-		"-framework AVFoundation"
-		"-framework MetalPerformanceShaders"
-		"-framework ModelIO"
-		"-framework Metal"
-		"-framework QuartzCore"
-		"-framework IOKit"
-		"-framework CoreGraphics"
-		"-framework AppKit"
-		"-framework MetalKit"
-	)
-endif()
 
 #
 # sources
@@ -258,6 +236,8 @@ set(TF_LIB_WIN32_EXTRA
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64/dxcompiler.lib
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/nvapi/amd64/nvapi64.lib
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.lib
+	dxgi.lib
+	d3dcompiler.lib
 )
 
 # dx rendersystem extra binaries
@@ -276,6 +256,18 @@ if (APPLE)
 		"Examples_3/Visibility_Buffer/macOS Xcode/Visibility_Buffer/Base.lproj/MainMenu.xib"
 	)
 	add_executable(${TF_TARGET_NAME} MACOSX_BUNDLE ${TF_SRC_MAIN} ${TF_SRC_MAIN_RES})
+	target_link_libraries(${TF_TARGET_NAME}
+		"-framework Foundation"
+		"-framework AVFoundation"
+		"-framework MetalPerformanceShaders"
+		"-framework ModelIO"
+		"-framework Metal"
+		"-framework QuartzCore"
+		"-framework IOKit"
+		"-framework CoreGraphics"
+		"-framework AppKit"
+		"-framework MetalKit"
+	)
 	set_target_properties(${TF_TARGET_NAME} 
 		PROPERTIES
 		MACOSX_BUNDLE_INFO_PLIST 
@@ -293,26 +285,29 @@ endif()
 
 source_group(Renderer FILES ${TF_SRC_RENDERER_COMMON})
 
-# vulkan renderer
-find_package(Vulkan)
-if (NOT Vulkan_FOUND)
-	if (TF_RENDERER STREQUAL "VULKAN")
-		message(ERROR "Vulkan SDK was not found")
-	else()
-		message(WARNING "Vulkan SDK was not found")
-	endif()
-else()
-	add_library(RendererVulkan ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_VULKAN})
-	target_compile_definitions(RendererVulkan PUBLIC VULKAN)
-	target_link_libraries(RendererVulkan Vulkan::Vulkan)
-endif()
-
 if (APPLE)
-	# metal renderer
+	# metal renderer - apple
+	set(TF_RENDERER "METAL")
 	add_library(RendererMetal ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_METAL})
 	target_compile_options(RendererMetal PUBLIC -x objective-c++)
 	target_compile_definitions(RendererMetal PUBLIC METAL)
-elseif (WIN32)
+else()
+	# vulkan renderer - everyone but apple
+	find_package(Vulkan)
+	if (NOT Vulkan_FOUND)
+		if (TF_RENDERER STREQUAL "VULKAN")
+			message(ERROR "Vulkan SDK was not found")
+		else()
+			message(WARNING "Vulkan SDK was not found")
+		endif()
+	else()
+		add_library(RendererVulkan ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_VULKAN})
+		target_compile_definitions(RendererVulkan PUBLIC VULKAN)
+		target_link_libraries(RendererVulkan Vulkan::Vulkan)
+	endif()
+endif()
+
+if (WIN32)
 	# dx11 renderer
 	add_library(RendererDX11 ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_D3D11})
 	target_compile_definitions(RendererDX11 PUBLIC DIRECT3D11)
@@ -323,20 +318,18 @@ elseif (WIN32)
 	target_compile_definitions(RendererDX12 PUBLIC DIRECT3D12)
 	target_link_libraries(RendererDX12 ${TF_LIB_WIN32_EXTRA})
 	
-	# copy binaries in a postbuild step
+	# postbuild dll copy
 	foreach(tf_bin IN ITEMS ${TF_BIN_WIN32_EXTRA})
 		add_custom_command(TARGET ${TF_TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${tf_bin} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>)
 	endforeach()
-else()
-	message(ERROR "Unsupported platform")
 endif()
 
 if (TF_RENDERER STREQUAL "VULKAN")
-	list(APPEND TF_LINK_LIBS RendererVulkan Vulkan::Vulkan)
+	list(APPEND TF_LINK_LIBS RendererVulkan)
 elseif (TF_RENDERER STREQUAL "DIRECT3D12")
-	list(APPEND TF_LINK_LIBS RendererDX12 d3d12.lib dxgi.lib d3dcompiler.lib)
+	list(APPEND TF_LINK_LIBS RendererDX12 d3d12.lib)
 elseif (TF_RENDERER STREQUAL "DIRECT3D11")
-	list(APPEND TF_LINK_LIBS RendererDX11 d3d12.lib dxgi.lib d3dcompiler.lib)
+	list(APPEND TF_LINK_LIBS RendererDX11 d3d11.lib)
 elseif (TF_RENDERER STREQUAL "METAL")
 	list(APPEND TF_LINK_LIBS RendererMetal)
 endif()
@@ -353,7 +346,7 @@ elseif (WIN32)
 endif()
 
 add_library(OS ${TF_SRC_OS})
-target_compile_options(OS PUBLIC -fobjc-arc)
+target_compile_options(OS PUBLIC -fobjc-arc -x objective-c++)
 target_compile_definitions(OS PUBLIC ${TF_RENDERER})
 target_link_libraries(OS ${TF_LINK_LIBS})
 

@@ -270,11 +270,21 @@ set(TF_BIN_WIN32_EXTRA
 # runtime
 
 # Visibility_Buffer
-add_executable(${TF_TARGET_NAME}
-	Examples_3/Visibility_Buffer/src/Geometry.h
-	Examples_3/Visibility_Buffer/src/Geometry.cpp
-	Examples_3/Visibility_Buffer/src/Visibility_Buffer.cpp
-)
+if (APPLE)
+	set(TF_SRC_MAIN_RES
+		"Examples_3/Visibility_Buffer/macOS Xcode/Visibility_Buffer/Base.lproj/MainMenu.xib"
+	)
+	add_executable(${TF_TARGET_NAME} MACOSX_BUNDLE ${TF_SRC_MAIN} ${TF_SRC_MAIN_RES})
+	set_target_properties(${TF_TARGET_NAME} 
+		PROPERTIES
+		MACOSX_BUNDLE_INFO_PLIST 
+			"${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Visibility_Buffer/macOS Xcode/Visibility_Buffer/Info.plist"
+		RESOURCE 
+			${TF_SRC_MAIN_RES}
+	)
+else()
+	add_executable(${TF_TARGET_NAME} ${TF_SRC_MAIN})
+endif()
 # properties for this target are resolved after all other dependencies
 
 #
@@ -282,25 +292,24 @@ add_executable(${TF_TARGET_NAME}
 
 source_group(Renderer FILES ${TF_SRC_RENDERER_COMMON})
 
-if (NOT APPLE)
-	# vulkan renderer
-	find_package(Vulkan)
-	if (NOT Vulkan_FOUND)
-		if (TF_RENDERER STREQUAL "VULKAN")
-			message(ERROR "Vulkan SDK was not found")
-		else()
-			message(WARNING "Vulkan SDK was not found")
-		endif()
+# vulkan renderer
+find_package(Vulkan)
+if (NOT Vulkan_FOUND)
+	if (TF_RENDERER STREQUAL "VULKAN")
+		message(ERROR "Vulkan SDK was not found")
 	else()
-		add_library(RendererVulkan ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_VULKAN})
-		target_compile_definitions(RendererVulkan PUBLIC VULKAN)
-		target_link_libraries(RendererVulkan Vulkan::Vulkan)
+		message(WARNING "Vulkan SDK was not found")
 	endif()
+else()
+	add_library(RendererVulkan ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_VULKAN})
+	target_compile_definitions(RendererVulkan PUBLIC VULKAN)
+	target_link_libraries(RendererVulkan Vulkan::Vulkan)
 endif()
 
 if (APPLE)
 	# metal renderer
 	add_library(RendererMetal ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_METAL})
+	target_compile_options(RendererMetal PUBLIC -x objective-c++)
 	target_compile_definitions(RendererMetal PUBLIC METAL)
 elseif (WIN32)
 	# dx11 renderer

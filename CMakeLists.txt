@@ -299,7 +299,7 @@ set(TF_DLL_RENDERDEPS_WIN_DX
 # runtime
 
 # Visibility_Buffer
-if (APPLE)
+if (TF_PLATFORM_OSX)
 	set(TF_SRC_MAIN_RES
 		"Examples_3/Visibility_Buffer/macOS Xcode/Visibility_Buffer/Base.lproj/MainMenu.xib"
 	)

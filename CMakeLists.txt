@@ -237,6 +237,21 @@ set(TF_SRC_OS_LIN
 	Common_3/OS/Linux/LinuxTime.cpp
 )
 
+# main application - resources
+set(TF_SRC_MAIN_RES)
+
+# main application - common
+set(TF_SRC_MAIN_COMMON
+	Examples_3/Visibility_Buffer/src/Geometry.h
+	Examples_3/Visibility_Buffer/src/Geometry.cpp
+)
+
+# main application
+set(TF_SRC_MAIN ${TF_SRC_MAIN_COMMON}
+	Examples_3/Visibility_Buffer/src/Visibility_Buffer.cpp
+)
+
+# dx rendersystem extra libs
 set(TF_LIB_WIN32_EXTRA
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/ags/ags_lib/lib/amd_ags_x64.lib
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64/dxcompiler.lib
@@ -244,6 +259,7 @@ set(TF_LIB_WIN32_EXTRA
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.lib
 )
 
+# dx rendersystem extra binaries
 set(TF_BIN_WIN32_EXTRA
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/ags/ags_lib/lib/amd_ags_x64.dll
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/bin/x64/dxcompiler.dll

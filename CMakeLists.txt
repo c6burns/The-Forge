@@ -318,7 +318,7 @@ if (APPLE)
 	# metal renderer - apple
 	set(TF_RENDERER "METAL")
 	add_library(RendererMetal ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_METAL})
-	target_compile_options(RendererMetal PUBLIC -x objective-c++)
+	target_compile_options(RendererMetal PUBLIC ${TF_OBJC_FLAGS})
 	target_compile_definitions(RendererMetal PUBLIC METAL)
 else()
 	# vulkan renderer - everyone but apple
@@ -375,7 +375,7 @@ elseif (WIN32)
 endif()
 
 add_library(OS ${TF_SRC_OS})
-target_compile_options(OS PUBLIC -fobjc-arc -x objective-c++)
+target_compile_options(OS PUBLIC ${TF_ARC_FLAGS} ${TF_OBJC_FLAGS})
 target_compile_definitions(OS PUBLIC ${TF_RENDERER})
 target_link_libraries(OS ${TF_LINK_LIBS})
 
@@ -396,7 +396,7 @@ set(GAINPUT_SAMPLES OFF CACHE INTERNAL "gainput: forced subdirectory option")
 set(GAINPUT_TESTS OFF CACHE INTERNAL "gainput: forced subdirectory option")
 mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS)
 add_subdirectory(Common_3/ThirdParty/OpenSource/gainput)
-target_compile_options(gainputstatic PUBLIC -x objective-c++)
+target_compile_options(gainputstatic PUBLIC ${TF_ARC_FLAGS} ${TF_OBJC_FLAGS})
 target_compile_definitions(gainputstatic PUBLIC ${TF_RENDERER})
 list(APPEND TF_LINK_LIBS gainputstatic)
 

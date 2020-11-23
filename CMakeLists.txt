@@ -1,10 +1,36 @@
 cmake_minimum_required(VERSION 3.1.0)
-
 project(TheForge LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 14)
+
+#
+# options
 
 set(TF_RENDERER "DIRECT3D12")
 set(TF_LINK_LIBS)
+set(TF_FLAGS)
 set(TF_TARGET_NAME Visibility_Buffer)
+
+#
+# setup
+
+if (APPLE)
+	set(TF_RENDERER "METAL")
+	set(TF_FLAGS -fobjc-arc -x objective-c)
+	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -x objective-c")
+	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -x objective-c++")
+	list(APPEND TF_LINK_LIBS 
+		"-framework Foundation"
+		"-framework AVFoundation"
+		"-framework MetalPerformanceShaders"
+		"-framework ModelIO"
+		"-framework Metal"
+		"-framework QuartzCore"
+		"-framework IOKit"
+		"-framework CoreGraphics"
+		"-framework AppKit"
+		"-framework MetalKit"
+	)
+endif()
 
 #
 # sources

@@ -353,32 +353,28 @@ list(APPEND TF_LINK_LIBS SpirvTools)
 
 source_group(Renderer FILES ${TF_SRC_RENDERER_COMMON})
 
-if (APPLE)
+if (TF_PLATFORM_OSX)
 	# metal renderer - apple
 	set(TF_RENDERER "METAL")
 	add_library(RendererMetal ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_METAL})
 	target_compile_options(RendererMetal PUBLIC ${TF_OBJC_FLAGS})
 	target_compile_definitions(RendererMetal PUBLIC METAL)
-else()
+elseif (TF_RENDERER_VULKAN)
 	# vulkan renderer - everyone but apple
 	find_package(Vulkan)
 	if (NOT Vulkan_FOUND)
-		if (TF_RENDERER STREQUAL "VULKAN")
-			message(ERROR "Vulkan SDK was not found")
-		else()
-			message(WARNING "Vulkan SDK was not found")
-		endif()
-	else()
-		add_library(RendererVulkan ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_VULKAN})
-		target_compile_definitions(RendererVulkan PUBLIC VULKAN)
-		target_link_libraries(RendererVulkan Vulkan::Vulkan SpirvTools
-			$<${TF_PLATFORM_WINDOWS}:${TF_LIB_RENDERDEPS_WIN}>
-			$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_LIB_RENDERDEPS_WIN_DX}>
-		)
+		message(FATAL_ERROR "Vulkan SDK was not found")
 	endif()
+
+	add_library(RendererVulkan ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_VULKAN})
+	target_compile_definitions(RendererVulkan PUBLIC VULKAN)
+	target_link_libraries(RendererVulkan Vulkan::Vulkan SpirvTools
+		$<${TF_PLATFORM_WINDOWS}:${TF_LIB_RENDERDEPS_WIN}>
+		$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_LIB_RENDERDEPS_WIN_DX}>
+	)
 endif()
 
-if (WIN32)
+if (TF_PLATFORM_WINDOWS)
 	# dx11 renderer
 	add_library(RendererDX11 ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_D3D11})
 	target_compile_definitions(RendererDX11 PUBLIC DIRECT3D11)

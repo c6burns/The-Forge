@@ -213,6 +213,7 @@ set(TF_SRC_OS
 
 # OS library - Darwin
 set(TF_SRC_OS_OSX
+	Common_3/OS/FileSystem/UnixFileSystem.cpp
 	Common_3/OS/Darwin/CocoaFileSystem.mm
 	Common_3/OS/Darwin/DarwinLog.cpp
 	Common_3/OS/Darwin/DarwinThread.cpp

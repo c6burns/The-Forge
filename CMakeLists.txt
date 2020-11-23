@@ -1,14 +1,43 @@
 cmake_minimum_required(VERSION 3.1.0)
-project(TheForge LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 14)
 
 #
 # setup
 
-set(TF_RENDERER "VULKAN")
+set(TF_TARGET_NAME TheForge)
+project(${TF_TARGET_NAME} LANGUAGES C CXX)
+
+set(TF_PLATFORM_WINDOWS 0)
+set(TF_PLATFORM_OSX 0)
+set(TF_PLATFORM_LINUX 0)
+if (APPLE)
+	set(TF_PLATFORM "OSX")
+	set(TF_PLATFORM_OSX 1)
+elseif (UNIX)
+	set(TF_PLATFORM "LINUX")
+	set(TF_PLATFORM_LINUX 1)
+elseif (WIN32)
+	set(TF_PLATFORM "WINDOWS")
+	set(TF_PLATFORM_WINDOWS 1)
+else()
+	message(FATAL_ERROR "Unsupported platform")
+endif()
+
 set(TF_LINK_LIBS)
-set(TF_FLAGS)
-set(TF_TARGET_NAME Visibility_Buffer)
+set(TF_OBJC_FLAGS $<${TF_PLATFORM_OSX}:"-x objective-c++">)
+set(TF_ARC_FLAGS $<${TF_PLATFORM_OSX}:"-fobjc-arc">)
+
+set(TF_RENDERER_VULKAN 0)
+set(TF_RENDERER_METAL 0)
+set(TF_RENDERER_DX12 0)
+set(TF_RENDERER_DX11 0)
+if (TF_PLATFORM_OSX)
+	set(TF_RENDERER "METAL")
+	set(TF_RENDERER_METAL 1)
+else()
+	set(TF_RENDERER "VULKAN")
+	set(TF_RENDERER_VULKAN 1)
+endif()
 
 #
 # sources

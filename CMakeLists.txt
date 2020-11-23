@@ -414,11 +414,11 @@ endif()
 #
 # OS (platform library)
 
-if (APPLE)
+if (TF_PLATFORM_OSX)
 	list(APPEND TF_SRC_OS ${TF_SRC_OS_OSX})
-elseif (UNIX)
+elseif (TF_PLATFORM_LINUX)
 	list(APPEND TF_SRC_OS ${TF_SRC_OS_LIN})
-elseif (WIN32)
+elseif (TF_PLATFORM_WINDOWS)
 	list(APPEND TF_SRC_OS ${TF_SRC_OS_WIN})
 endif()
 

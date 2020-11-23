@@ -372,6 +372,7 @@ set(GAINPUT_SAMPLES OFF CACHE INTERNAL "gainput: forced subdirectory option")
 set(GAINPUT_TESTS OFF CACHE INTERNAL "gainput: forced subdirectory option")
 mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS)
 add_subdirectory(Common_3/ThirdParty/OpenSource/gainput)
+target_compile_options(gainputstatic PUBLIC -x objective-c++)
 target_compile_definitions(gainputstatic PUBLIC ${TF_RENDERER})
 list(APPEND TF_LINK_LIBS gainputstatic)
 

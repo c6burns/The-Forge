@@ -399,6 +399,7 @@ mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINP
 add_subdirectory(Common_3/ThirdParty/OpenSource/gainput)
 target_compile_options(gainputstatic PUBLIC ${TF_ARC_FLAGS} ${TF_OBJC_FLAGS})
 target_compile_definitions(gainputstatic PUBLIC ${TF_RENDERER})
+target_link_libraries(gainputstatic ${TF_LIB_XINPUT})
 list(APPEND TF_LINK_LIBS gainputstatic)
 
 # SpirvTools

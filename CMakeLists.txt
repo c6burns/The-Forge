@@ -263,19 +263,34 @@ set(TF_SRC_MAIN ${TF_SRC_MAIN_COMMON}
 	Examples_3/Visibility_Buffer/src/Visibility_Buffer.cpp
 )
 
-# dx rendersystem extra libs
-set(TF_LIB_WIN32_EXTRA
+# libs common to all windows render systems
+set(TF_LIB_EXTRA)
+set(TF_BIN_EXTRA)
+
+# rendersystem extra libs
+set(TF_LIB_RENDERDEPS
+	$<${TF_PLATFORM_WINDOWS}:${TF_LIB_RENDERDEPS_WIN}>
+	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_LIB_RENDERDEPS_WIN_DX}>
+)
+set(TF_LIB_RENDERDEPS_WIN
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/ags/ags_lib/lib/amd_ags_x64.lib
-	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64/dxcompiler.lib
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/nvapi/amd64/nvapi64.lib
+)
+set(TF_LIB_RENDERDEPS_WIN_DX
+	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64/dxcompiler.lib
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.lib
 	dxgi.lib
 	d3dcompiler.lib
 )
 
-# dx rendersystem extra binaries
-set(TF_BIN_WIN32_EXTRA
+# rendersystem extra dlls
+set(TF_DLL_RENDERDEPS
+	
+)
+set(TF_DLL_RENDERDEPS_WIN
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/ags/ags_lib/lib/amd_ags_x64.dll
+)
+set(TF_DLL_RENDERDEPS_WIN_DX
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/bin/x64/dxcompiler.dll
 	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.dll
 )
@@ -356,7 +371,10 @@ else()
 	else()
 		add_library(RendererVulkan ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_VULKAN})
 		target_compile_definitions(RendererVulkan PUBLIC VULKAN)
-		target_link_libraries(RendererVulkan Vulkan::Vulkan)
+		target_link_libraries(RendererVulkan Vulkan::Vulkan SpirvTools
+			$<${TF_PLATFORM_WINDOWS}:${TF_LIB_RENDERDEPS_WIN}>
+			$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_LIB_RENDERDEPS_WIN_DX}>
+		)
 	endif()
 endif()
 
@@ -364,12 +382,18 @@ if (WIN32)
 	# dx11 renderer
 	add_library(RendererDX11 ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_D3D11})
 	target_compile_definitions(RendererDX11 PUBLIC DIRECT3D11)
-	target_link_libraries(RendererDX11 ${TF_LIB_WIN32_EXTRA})
+	target_link_libraries(RendererDX11 d3d11.lib
+		$<${TF_PLATFORM_WINDOWS}:${TF_LIB_RENDERDEPS_WIN}>
+		$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_LIB_RENDERDEPS_WIN_DX}>
+	)
 	
 	# dx12 renderer
 	add_library(RendererDX12 ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_D3D12})
 	target_compile_definitions(RendererDX12 PUBLIC DIRECT3D12)
-	target_link_libraries(RendererDX12 ${TF_LIB_WIN32_EXTRA})
+	target_link_libraries(RendererDX12 d3d12.lib
+		$<${TF_PLATFORM_WINDOWS}:${TF_LIB_RENDERDEPS_WIN}>
+		$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_LIB_RENDERDEPS_WIN_DX}>
+	)
 	
 	# postbuild dll copy
 	foreach(tf_bin IN ITEMS ${TF_BIN_WIN32_EXTRA})
@@ -380,9 +404,9 @@ endif()
 if (TF_RENDERER STREQUAL "VULKAN")
 	list(APPEND TF_LINK_LIBS RendererVulkan)
 elseif (TF_RENDERER STREQUAL "DIRECT3D12")
-	list(APPEND TF_LINK_LIBS RendererDX12 d3d12.lib)
+	list(APPEND TF_LINK_LIBS RendererDX12)
 elseif (TF_RENDERER STREQUAL "DIRECT3D11")
-	list(APPEND TF_LINK_LIBS RendererDX11 d3d11.lib)
+	list(APPEND TF_LINK_LIBS RendererDX11)
 elseif (TF_RENDERER STREQUAL "METAL")
 	list(APPEND TF_LINK_LIBS RendererMetal)
 endif()

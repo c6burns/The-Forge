@@ -322,10 +322,9 @@ elseif (WIN32)
 	target_compile_definitions(RendererDX12 PUBLIC DIRECT3D12)
 	target_link_libraries(RendererDX12 ${TF_LIB_WIN32_EXTRA})
 	
-	add_custom_target(genexdebug COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_FILE_DIR:${TF_TARGET_NAME}>")
+	# copy binaries in a postbuild step
 	foreach(tf_bin IN ITEMS ${TF_BIN_WIN32_EXTRA})
 		add_custom_command(TARGET ${TF_TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${tf_bin} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>)
-		#add_custom_command(TARGET ${TF_TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE_DIR:${TF_TARGET_NAME}>../ ${tf_bin})
 	endforeach()
 else()
 	message(ERROR "Unsupported platform")

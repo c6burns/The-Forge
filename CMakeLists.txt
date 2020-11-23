@@ -24,8 +24,9 @@ else()
 endif()
 
 set(TF_LINK_LIBS)
-set(TF_OBJC_FLAGS $<${TF_PLATFORM_OSX}:"-x objective-c++">)
-set(TF_ARC_FLAGS $<${TF_PLATFORM_OSX}:"-fobjc-arc">)
+set(TF_OBJC_FLAGS $<${TF_PLATFORM_OSX}:-x objective-c++>)
+set(TF_ARC_FLAGS $<${TF_PLATFORM_OSX}:-fobjc-arc>)
+set(TF_LIB_XINPUT $<${TF_PLATFORM_WINDOWS}:xinput.lib>)
 
 set(TF_RENDERER_VULKAN 0)
 set(TF_RENDERER_METAL 0)

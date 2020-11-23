@@ -352,6 +352,7 @@ elseif (WIN32)
 endif()
 
 add_library(OS ${TF_SRC_OS})
+target_compile_options(OS PUBLIC -fobjc-arc)
 target_compile_definitions(OS PUBLIC ${TF_RENDERER})
 target_link_libraries(OS ${TF_LINK_LIBS})
 

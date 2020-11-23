@@ -228,8 +228,6 @@ set(TF_SRC_OS_OSX
 	Common_3/OS/Darwin/CocoaFileSystem.mm
 	Common_3/OS/Darwin/DarwinLog.cpp
 	Common_3/OS/Darwin/DarwinThread.cpp
-	Common_3/OS/Darwin/macOSAppDelegate.h
-	Common_3/OS/Darwin/macOSAppDelegate.m
 	Common_3/OS/Darwin/macOSBase.mm
 )
 
@@ -256,6 +254,8 @@ set(TF_SRC_MAIN_RES)
 set(TF_SRC_MAIN_COMMON
 	Examples_3/Visibility_Buffer/src/Geometry.h
 	Examples_3/Visibility_Buffer/src/Geometry.cpp
+	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.h>
+	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.m>
 )
 
 # main application

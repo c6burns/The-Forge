@@ -254,6 +254,7 @@ set(TF_SRC_MAIN_RES)
 set(TF_SRC_MAIN_COMMON
 	Examples_3/Visibility_Buffer/src/Geometry.h
 	Examples_3/Visibility_Buffer/src/Geometry.cpp
+	$<${TF_PLATFORM_OSX}:Middleware_3/ParallelPrimitives/ParallelPrimitives.cpp>
 	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.h>
 	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.m>
 )

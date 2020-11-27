@@ -463,3 +463,38 @@ endforeach()
 
 target_compile_definitions(${TF_TARGET_NAME} PUBLIC ${TF_RENDERER})
 target_link_libraries(${TF_TARGET_NAME} OS ${TF_LINK_LIBS})
+
+#
+# postbuild copy
+
+set(TF_DIR_ART ${CMAKE_CURRENT_SOURCE_DIR}/Art/SanMiguel_3)
+set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Visibility_Buffer)
+set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
+file(GLOB TF_SRC_MESHES ${TF_DIR_ART}/Meshes/*)
+file(GLOB TF_SRC_TEXTURES ${TF_DIR_ART}/Textures/*.dds)
+file(GLOB TF_SRC_FONTS ${TF_DIR_PROJ}/Resources/Fonts/TitilliumText/*)
+file(GLOB TF_SRC_GPUCFGS ${TF_DIR_PROJ}/src/GPUCfg/*)
+file(GLOB TF_SRC_SHADERS ${TF_DIR_PROJ}/src/Shaders/${TF_RENDERER_DIR}/*)
+file(GLOB TF_UI_SHADERS ${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*)
+file(GLOB TF_TEXT_SHADERS ${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*)
+
+add_custom_command(
+	TARGET ${TF_TARGET_NAME}
+	POST_BUILD
+	
+	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Meshes
+	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures
+	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts
+	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts/TitilliumText
+	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
+	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/GPUCfg
+	
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_SRC_MESHES} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Meshes
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_SRC_TEXTURES} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_SRC_FONTS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts/TitilliumText
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_SRC_GPUCFGS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/GPUCfg
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_SRC_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_UI_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_TEXT_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_DIR_PROJ}/Resources/cameraPath.bin $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/cameraPath.bin
+)

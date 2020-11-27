@@ -255,8 +255,6 @@ set(TF_SRC_OS_OSX
 	Common_3/OS/Darwin/CocoaFileSystem.mm
 	Common_3/OS/Darwin/DarwinLog.cpp
 	Common_3/OS/Darwin/DarwinThread.cpp
-	Common_3/OS/Darwin/macOSAppDelegate.h
-	Common_3/OS/Darwin/macOSAppDelegate.m
 	Common_3/OS/Darwin/macOSBase.mm
 )
 
@@ -283,6 +281,9 @@ set(TF_SRC_MAIN_RES)
 set(TF_SRC_MAIN_COMMON
 	Examples_3/Visibility_Buffer/src/Geometry.h
 	Examples_3/Visibility_Buffer/src/Geometry.cpp
+	$<${TF_PLATFORM_OSX}:Middleware_3/ParallelPrimitives/ParallelPrimitives.cpp>
+	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.h>
+	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.m>
 )
 
 # main application
@@ -365,7 +366,7 @@ set(GAINPUT_SAMPLES OFF CACHE INTERNAL "gainput: forced subdirectory option")
 set(GAINPUT_TESTS OFF CACHE INTERNAL "gainput: forced subdirectory option")
 mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS)
 add_subdirectory(Common_3/ThirdParty/OpenSource/gainput)
-target_compile_options(gainputstatic PUBLIC ${TF_ARC_FLAGS} ${TF_OBJC_FLAGS})
+target_compile_options(gainputstatic PUBLIC ${TF_OBJC_FLAGS})
 target_compile_definitions(gainputstatic PUBLIC ${TF_RENDERER})
 target_link_libraries(gainputstatic ${TF_LIB_XINPUT})
 list(APPEND TF_LINK_LIBS gainputstatic)

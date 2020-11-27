@@ -495,3 +495,54 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_TEXT_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_DIR_PROJ}/Resources/cameraPath.bin $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/cameraPath.bin
 )
+
+#
+# Unit Tests
+
+# 01_Transformations
+set(TF_TARGET_NAME 01_Transformations)
+set(TF_DIR_ART ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
+set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
+set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
+file(GLOB TF_SRC_MESHES ${TF_DIR_ART}/Meshes/*)
+file(GLOB TF_SRC_SKY ${TF_DIR_ART}/Textures/Skybox_*.dds)
+file(GLOB TF_SRC_CPAD ${TF_DIR_ART}/Textures/circlepad.dds)
+file(GLOB TF_SRC_TEXTURES ${TF_SRC_SKY} ${TF_SRC_CPAD})
+file(GLOB TF_SRC_TTF ${TF_DIR_PROJ}/Resources/Fonts/*.ttf)
+file(GLOB TF_SRC_OTF ${TF_DIR_PROJ}/Resources/Fonts/*.otf)
+file(GLOB TF_SRC_GPUCFGS ${TF_DIR_PROJ}/GPUCfg/*)
+file(GLOB TF_SRC_SHADERS ${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*)
+file(GLOB TF_UI_SHADERS ${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*)
+file(GLOB TF_TEXT_SHADERS ${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*)
+add_executable(${TF_TARGET_NAME}
+	${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
+)
+target_compile_definitions(${TF_TARGET_NAME} PUBLIC ${TF_RENDERER})
+target_link_libraries(${TF_TARGET_NAME} OS ${TF_LINK_LIBS})
+add_custom_command(
+	TARGET ${TF_TARGET_NAME}
+	POST_BUILD
+	
+	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures
+	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts
+	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
+	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/GPUCfg
+	
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_SRC_TEXTURES} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_SRC_GPUCFGS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/GPUCfg
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_SRC_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_UI_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different  ${TF_TEXT_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
+)
+set(TF_FONT_DIRS)
+file(GLOB tf_tmp_dirs ${TF_DIR_ART}/Fonts/*)
+foreach(tf_tmp_dir IN ITEMS ${tf_tmp_dirs})
+	if (IS_DIRECTORY ${tf_tmp_dir})
+		file(GLOB tf_tmp_glob ${tf_tmp_dir}/*)
+		get_filename_component(tf_out_dir ${tf_tmp_dir} NAME)
+		add_custom_command(TARGET ${TF_TARGET_NAME} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts/${tf_out_dir}
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${tf_tmp_glob} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts/${tf_out_dir}
+		)
+	endif()
+endforeach()

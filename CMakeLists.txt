@@ -313,6 +313,19 @@ set(TF_LIB_RENDERDEPS_WIN_DX
 	d3dcompiler.lib
 )
 
+set(TF_OSX_FRAMEWORKS
+	"-framework Foundation"
+	"-framework AVFoundation"
+	"-framework MetalPerformanceShaders"
+	"-framework ModelIO"
+	"-framework Metal"
+	"-framework QuartzCore"
+	"-framework IOKit"
+	"-framework CoreGraphics"
+	"-framework AppKit"
+	"-framework MetalKit"
+)
+
 # rendersystem extra dlls
 set(TF_DLL_RENDERDEPS
 	
@@ -329,27 +342,19 @@ set(TF_DLL_RENDERDEPS_WIN_DX
 # runtime
 
 # Visibility_Buffer
+set(TF_RESDIR_TARGET $<TARGET_FILE_DIR:${TF_TARGET_NAME}>)
 if (TF_PLATFORM_OSX)
+	set(TF_RESDIR_TARGET ${TF_RESDIR_TARGET}/../Resources)
 	set(TF_SRC_MAIN_RES
 		"Examples_3/Visibility_Buffer/macOS Xcode/Visibility_Buffer/Base.lproj/MainMenu.xib"
 	)
 	add_executable(${TF_TARGET_NAME} MACOSX_BUNDLE ${TF_SRC_MAIN} ${TF_SRC_MAIN_RES})
-	target_link_libraries(${TF_TARGET_NAME}
-		"-framework Foundation"
-		"-framework AVFoundation"
-		"-framework MetalPerformanceShaders"
-		"-framework ModelIO"
-		"-framework Metal"
-		"-framework QuartzCore"
-		"-framework IOKit"
-		"-framework CoreGraphics"
-		"-framework AppKit"
-		"-framework MetalKit"
-	)
+	target_link_libraries(${TF_TARGET_NAME} ${TF_OSX_FRAMEWORKS})
+	set(TF_BUNDLE_IDENTIFIER com.confetti.Examples.VisibilityBuffer)
 	set_target_properties(${TF_TARGET_NAME} 
 		PROPERTIES
 		MACOSX_BUNDLE_INFO_PLIST 
-			"${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Visibility_Buffer/macOS Xcode/Visibility_Buffer/Info.plist"
+			"${CMAKE_CURRENT_SOURCE_DIR}/CMake/Info.plist.in"
 		RESOURCE 
 			${TF_SRC_MAIN_RES}
 	)
@@ -461,14 +466,16 @@ if (TF_PLATFORM_WINDOWS)
 	endforeach()
 endif()
 
-if (TF_RENDERER STREQUAL "VULKAN")
+if (TF_RENDERER_VULKAN)
 	list(APPEND TF_LINK_LIBS RendererVulkan)
-elseif (TF_RENDERER STREQUAL "DIRECT3D12")
+elseif (TF_RENDERER_DX12)
 	list(APPEND TF_LINK_LIBS RendererDX12)
-elseif (TF_RENDERER STREQUAL "DIRECT3D11")
+elseif (TF_RENDERER_DX11)
 	list(APPEND TF_LINK_LIBS RendererDX11)
-elseif (TF_RENDERER STREQUAL "METAL")
+elseif (TF_RENDERER_METAL)
 	list(APPEND TF_LINK_LIBS RendererMetal)
+else()
+	message(FATAL_ERROR "Invalid renderer selected")
 endif()
 
 
@@ -496,21 +503,21 @@ add_custom_command(
 	TARGET ${TF_TARGET_NAME}
 	POST_BUILD
 	
-	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Meshes
-	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures
-	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts
-	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts/TitilliumText
-	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
-	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/GPUCfg
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Meshes
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Textures
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts/TitilliumText
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Shaders
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/GPUCfg
 	
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_MESHES} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Meshes
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_TEXTURES} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_FONTS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts/TitilliumText
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_GPUCFGS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/GPUCfg
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_UI_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_TEXT_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_DIR_PROJ}/Resources/cameraPath.bin $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/cameraPath.bin
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_MESHES} ${TF_RESDIR_TARGET}/Meshes
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_TEXTURES} ${TF_RESDIR_TARGET}/Textures
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_FONTS} ${TF_RESDIR_TARGET}/Fonts/TitilliumText
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_GPUCFGS} ${TF_RESDIR_TARGET}/GPUCfg
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_SHADERS} ${TF_RESDIR_TARGET}/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_UI_SHADERS} ${TF_RESDIR_TARGET}/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_TEXT_SHADERS} ${TF_RESDIR_TARGET}/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_DIR_PROJ}/Resources/cameraPath.bin ${TF_RESDIR_TARGET}/cameraPath.bin
 )
 
 #
@@ -531,25 +538,50 @@ file(GLOB TF_SRC_GPUCFGS ${TF_DIR_PROJ}/GPUCfg/*)
 file(GLOB TF_SRC_SHADERS ${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*)
 file(GLOB TF_UI_SHADERS ${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*)
 file(GLOB TF_TEXT_SHADERS ${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*)
-add_executable(${TF_TARGET_NAME}
+set(TF_SRC_TARGET
 	${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
 )
+set(TF_RESDIR_TARGET $<TARGET_FILE_DIR:${TF_TARGET_NAME}>)
+if (TF_PLATFORM_OSX)
+	set(TF_RESDIR_TARGET ${TF_RESDIR_TARGET}/../Resources)
+	set(TF_DIR_XCODEPROJ "Examples_3/Unit_Tests/macOS Xcode/${TF_TARGET_NAME}/${TF_TARGET_NAME}")
+	set(TF_SRC_RES ${TF_DIR_XCODEPROJ}/Base.lproj/MainMenu.xib)
+	add_executable(${TF_TARGET_NAME} MACOSX_BUNDLE ${TF_SRC_TARGET} ${TF_SRC_RES})
+	target_link_libraries(${TF_TARGET_NAME} ${TF_OSX_FRAMEWORKS})
+	set(TF_BUNDLE_IDENTIFIER com.confetti.Unit-Tests.01-Transformations)
+	set_target_properties(${TF_TARGET_NAME} 
+		PROPERTIES
+		MACOSX_BUNDLE_INFO_PLIST 
+			"${CMAKE_CURRENT_SOURCE_DIR}/CMake/Info.plist.in"
+		RESOURCE 
+			${TF_SRC_RES}
+	)
+	target_link_libraries(${TF_TARGET_NAME} ${TF_OSX_FRAMEWORKS})
+
+	target_sources(${TF_TARGET_NAME} PRIVATE ${TF_DIR_XCODEPROJ}/Assets.xcassets)
+	set_source_files_properties(${TF_DIR_XCODEPROJ}/Assets.xcassets PROPERTIES
+		MACOSX_PACKAGE_LOCATION Resources
+	)
+else()
+	add_executable(${TF_TARGET_NAME} ${TF_SRC_TARGET})
+endif()
 target_compile_definitions(${TF_TARGET_NAME} PUBLIC ${TF_RENDERER})
 target_link_libraries(${TF_TARGET_NAME} OS ${TF_LINK_LIBS})
 add_custom_command(
 	TARGET ${TF_TARGET_NAME}
 	POST_BUILD
 	
-	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures
-	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts
-	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
-	COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/GPUCfg
+	COMMAND echo "${TF_RESDIR_TARGET}"
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Textures
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Shaders
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/GPUCfg
 	
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_TEXTURES} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_GPUCFGS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/GPUCfg
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_UI_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_TEXT_SHADERS} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_TEXTURES} ${TF_RESDIR_TARGET}/Textures
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_GPUCFGS} ${TF_RESDIR_TARGET}/GPUCfg
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_SHADERS} ${TF_RESDIR_TARGET}/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_UI_SHADERS} ${TF_RESDIR_TARGET}/Shaders
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_TEXT_SHADERS} ${TF_RESDIR_TARGET}/Shaders
 )
 set(TF_FONT_DIRS)
 file(GLOB tf_tmp_dirs ${TF_DIR_ART}/Fonts/*)
@@ -558,8 +590,8 @@ foreach(tf_tmp_dir IN ITEMS ${tf_tmp_dirs})
 		file(GLOB tf_tmp_glob ${tf_tmp_dir}/*)
 		get_filename_component(tf_out_dir ${tf_tmp_dir} NAME)
 		add_custom_command(TARGET ${TF_TARGET_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts/${tf_out_dir}
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${tf_tmp_glob} $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Fonts/${tf_out_dir}
+			COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${tf_tmp_glob} ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
 		)
 	endif()
 endforeach()

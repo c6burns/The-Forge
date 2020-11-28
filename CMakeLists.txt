@@ -397,6 +397,7 @@ elseif (TF_RENDERER_VULKAN)
 	target_link_libraries(RendererVulkan Vulkan::Vulkan SpirvTools
 		$<${TF_PLATFORM_WINDOWS}:${TF_LIB_RENDERDEPS_WIN}>
 		$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_LIB_RENDERDEPS_WIN_DX}>
+		$<${TF_PLATFORM_LINUX}:dl>
 	)
 endif()
 

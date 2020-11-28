@@ -61,3 +61,6 @@ Tools/ShaderBuildCommand/packages/
 
 # CMake build folders
 build*/
+
+Art.zip
+Art/*

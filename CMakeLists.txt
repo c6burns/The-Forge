@@ -448,7 +448,13 @@ endif()
 add_library(OS ${TF_SRC_OS})
 target_compile_options(OS PUBLIC ${TF_ARC_FLAGS} ${TF_OBJC_FLAGS})
 target_compile_definitions(OS PUBLIC ${TF_RENDERER})
-target_link_libraries(OS ${TF_LINK_LIBS})
+message(WARNING ${TF_LINK_LIBS})
+target_link_libraries(OS
+	${TF_LINK_LIBS}
+	$<${TF_PLATFORM_LINUX}:pthread>
+	$<${TF_PLATFORM_LINUX}:X11>
+	$<${TF_PLATFORM_LINUX}:Xrandr>
+)
 
 foreach(tf_source IN ITEMS ${TF_SRC_OS})
     get_filename_component(tf_path "${tf_source}" PATH)

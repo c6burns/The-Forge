@@ -264,6 +264,7 @@ set(TF_SRC_OS_IOS
 
 # OS library - Linux
 set(TF_SRC_OS_LIN
+	Common_3/OS/FileSystem/UnixFileSystem.cpp
 	Common_3/OS/Linux/LinuxBase.cpp
 	Common_3/OS/Linux/LinuxFileSystem.cpp
 	Common_3/OS/Linux/LinuxLog.cpp

@@ -471,34 +471,6 @@ elseif (TF_RENDERER STREQUAL "METAL")
 	list(APPEND TF_LINK_LIBS RendererMetal)
 endif()
 
-#
-# OS (platform library)
-
-if (TF_PLATFORM_OSX)
-	list(APPEND TF_SRC_OS ${TF_SRC_OS_OSX})
-elseif (TF_PLATFORM_LINUX)
-	list(APPEND TF_SRC_OS ${TF_SRC_OS_LIN})
-elseif (TF_PLATFORM_WINDOWS)
-	list(APPEND TF_SRC_OS ${TF_SRC_OS_WIN})
-endif()
-
-add_library(OS ${TF_SRC_OS})
-target_compile_options(OS PUBLIC ${TF_ARC_FLAGS} ${TF_OBJC_FLAGS})
-target_compile_definitions(OS PUBLIC ${TF_RENDERER})
-message(WARNING ${TF_LINK_LIBS})
-target_link_libraries(OS
-	${TF_LINK_LIBS}
-	$<${TF_PLATFORM_LINUX}:pthread>
-	$<${TF_PLATFORM_LINUX}:X11>
-	$<${TF_PLATFORM_LINUX}:Xrandr>
-)
-
-foreach(tf_source IN ITEMS ${TF_SRC_OS})
-    get_filename_component(tf_path "${tf_source}" PATH)
-	string(REGEX REPLACE "^.*\/([^\/]+)$" "\\1" tf_group_path "${tf_path}")
-    source_group("${tf_group_path}" FILES "${tf_source}")
-	#message("GROUP: ${tf_group_path} - ${tf_path}")
-endforeach()
 
 #
 # runtime target properties

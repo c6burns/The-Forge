@@ -486,6 +486,33 @@ target_compile_definitions(${TF_TARGET_NAME} PUBLIC ${TF_RENDERER})
 target_link_libraries(${TF_TARGET_NAME} OS ${TF_LINK_LIBS})
 
 #
+# handle Art.zip
+
+set(TF_ART_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Art)
+set(TF_ART_FILE ${TF_ART_DIR}.zip)
+if (NOT EXISTS ${TF_ART_FILE})
+	file(DOWNLOAD http://www.conffx.com/Art.zip ${TF_ART_FILE} SHOW_PROGRESS TLS_VERIFY ON)
+endif()
+
+if (NOT IS_DIRECTORY ${TF_ART_DIR})
+	if (TF_PLATFORM_WINDOWS)
+		execute_process(
+			COMMAND
+				${CMAKE_CURRENT_SOURCE_DIR}/Tools/7z x Art.zip -y
+			WORKING_DIRECTORY
+				${CMAKE_CURRENT_SOURCE_DIR}
+		)
+	else()
+		execute_process(
+			COMMAND
+				unzip Art.zip
+			WORKING_DIRECTORY
+				${CMAKE_CURRENT_SOURCE_DIR}
+		)
+	endif()
+endif()
+
+#
 # postbuild copy
 
 set(TF_DIR_ART ${CMAKE_CURRENT_SOURCE_DIR}/Art/SanMiguel_3)

@@ -294,8 +294,8 @@ set(TF_SRC_OS
 	# Middleware_3/Animation/SkeletonBatcher.cpp
 	
 	# Middleware / ParallelPrimitives
-	# Middleware_3/ParallelPrimitives/ParallelPrimitives.h
-	# Middleware_3/ParallelPrimitives/ParallelPrimitives.cpp
+	$<${TF_PLATFORM_OSX}:Middleware_3/ParallelPrimitives/ParallelPrimitives.h>
+	$<${TF_PLATFORM_OSX}:Middleware_3/ParallelPrimitives/ParallelPrimitives.cpp>
 
 	# Middleware / ECS
 	Middleware_3/ECS/BaseComponent.h

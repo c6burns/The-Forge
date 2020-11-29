@@ -79,6 +79,8 @@ set(TF_DIR_TOOLS ${TF_DIR_COMMON}/Tools)
 set(TF_DIR_OSS ${TF_DIR_COMMON}/ThirdParty/OpenSource)
 set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
 
+find_package(Vulkan)
+
 #
 # sources
 
@@ -371,6 +373,10 @@ set_target_properties(TheForge
 		XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
 		XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_WEAK YES
 )
+target_link_libraries(TheForge
+	gainputstatic
+	$<${TF_PLATFORM_LINUX}:dl>
+)
 
 # mark certain files as objective-c / objective-c++
 set(TF_SRC_OBJC
@@ -425,7 +431,6 @@ if (TF_PLATFORM_OSX)
 	find_library(TF_LIB_CONTROLLER GameController)
 endif()
 set(TF_LINK_LIBS
-	gainputstatic
 	TheForge
 
 	# Windows

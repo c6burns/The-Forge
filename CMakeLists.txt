@@ -70,7 +70,7 @@ if (tf_valid_idx LESS 0)
 endif()
 list(GET TF_RENDERER_DIR_VALID ${tf_valid_idx} TF_RENDERER_DIR)
 
-message("Building: ${TF_RENDERER} / ${TF_RENDERER_DIR}")
+message("Building: ${TF_PLATFORM} / ${TF_RENDERER}")
 
 set(TF_DIR_COMMON ${CMAKE_CURRENT_SOURCE_DIR}/Common_3)
 set(TF_DIR_RENDER ${TF_DIR_COMMON}/Renderer)

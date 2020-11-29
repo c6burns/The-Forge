@@ -68,11 +68,18 @@ list(GET TF_RENDERER_DIR_VALID ${tf_valid_idx} TF_RENDERER_DIR)
 
 message("Building: ${TF_RENDERER} / ${TF_RENDERER_DIR}")
 
+set(TF_DIR_COMMON ${CMAKE_CURRENT_SOURCE_DIR}/Common_3)
+set(TF_DIR_RENDER ${TF_DIR_COMMON}/Renderer)
+set(TF_DIR_OS ${TF_DIR_COMMON}/OS)
+set(TF_DIR_TOOLS ${TF_DIR_COMMON}/Tools)
+set(TF_DIR_OSS ${TF_DIR_COMMON}/ThirdParty/OpenSource)
+set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
 
 #
 # sources
 
-set(TF_SRC_RENDERER_COMMON Common_3/Renderer/IRay.h
+set(TF_SRC_RENDERER_COMMON
+	Common_3/Renderer/IRay.h
 	Common_3/Renderer/IRenderer
 	Common_3/Renderer/IResourceLoader
 	Common_3/Renderer/IShaderReflection
@@ -114,6 +121,7 @@ set(TF_SRC_RENDERER_METAL
 	Common_3/Renderer/Metal/MetalShaderReflection.mm
 )
 
+# SpirvTools - dependency
 set(TF_SRC_SPIRVTOOLS
 	Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cfg
 	Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cpp
@@ -129,19 +137,16 @@ set(TF_SRC_SPIRVTOOLS
 	Common_3/Tools/SpirvTools/SpirvTools.cpp
 )
 
-# OS library - Windows
-set(TF_SRC_OS_WIN
-	Common_3/OS/Windows/WindowsBase.cpp
-	Common_3/OS/Windows/WindowsFileSystem.cpp
-	Common_3/OS/Windows/WindowsLog.cpp
-	Common_3/OS/Windows/WindowsStackTraceDump.h
-	Common_3/OS/Windows/WindowsStackTraceDump.cpp
-	Common_3/OS/Windows/WindowsThread.cpp
-	Common_3/OS/Windows/WindowsTime.cpp
-)
+# gainput - dependency
+file(GLOB_RECURSE TF_SRC_GAINPUT ${TF_DIR_OSS}/gainput/lib/source/*.cpp ${TF_DIR_OSS}/gainput/lib/source/*.h ${TF_DIR_OSS}/gainput/lib/include/*.h)
+if(APPLE)
+	file(GLOB_RECURSE TF_MMSRC_GAINPUT ${TF_DIR_OSS}/gainput/lib/source/*.mm)
+	set(TF_SRC_GAINPUT ${TF_SRC_GAINPUT} ${TF_MMSRC_GAINPUT})
+endif()
 
 # OS library
 set(TF_SRC_OS
+
 	# basisu
 	Common_3/ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder.cpp
 	
@@ -248,94 +253,96 @@ set(TF_SRC_OS
 	Common_3/OS/Profiler/ProfilerBase.cpp
 	Common_3/OS/Profiler/ProfilerHTML.h
 	Common_3/OS/Profiler/ProfilerWidgetsUI.cpp
-)
 
-# OS library - Darwin
-set(TF_SRC_OS_OSX
-	Common_3/OS/FileSystem/UnixFileSystem.cpp
-	Common_3/OS/Darwin/CocoaFileSystem.mm
-	Common_3/OS/Darwin/DarwinLog.cpp
-	Common_3/OS/Darwin/DarwinThread.cpp
-	Common_3/OS/Darwin/macOSBase.mm
-)
+	# OS / Windows
+	$<${TF_PLATFORM_WINDOWS}:Common_3/OS/Windows/WindowsBase.cpp>
+	$<${TF_PLATFORM_WINDOWS}:Common_3/OS/Windows/WindowsFileSystem.cpp>
+	$<${TF_PLATFORM_WINDOWS}:Common_3/OS/Windows/WindowsLog.cpp>
+	$<${TF_PLATFORM_WINDOWS}:Common_3/OS/Windows/WindowsStackTraceDump.h>
+	$<${TF_PLATFORM_WINDOWS}:Common_3/OS/Windows/WindowsStackTraceDump.cpp>
+	$<${TF_PLATFORM_WINDOWS}:Common_3/OS/Windows/WindowsThread.cpp>
+	$<${TF_PLATFORM_WINDOWS}:Common_3/OS/Windows/WindowsTime.cpp>
 
-# OS library - iOS
-set(TF_SRC_OS_IOS
-	Common_3/OS/Darwin/iOSAppDelegate.h
-	Common_3/OS/Darwin/iOSAppDelegate.m
-	Common_3/OS/Darwin/iOSBase.mm
-)
+	# OS / OSX
+	$<${TF_PLATFORM_OSX}:Common_3/OS/FileSystem/UnixFileSystem.cpp>
+	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/CocoaFileSystem.mm>
+	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/DarwinLog.cpp>
+	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/DarwinThread.cpp>
+	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSBase.mm>
 
-# OS library - Linux
-set(TF_SRC_OS_LIN
-	Common_3/OS/FileSystem/UnixFileSystem.cpp
-	Common_3/OS/Linux/LinuxBase.cpp
-	Common_3/OS/Linux/LinuxFileSystem.cpp
-	Common_3/OS/Linux/LinuxLog.cpp
-	Common_3/OS/Linux/LinuxThread.cpp
-	Common_3/OS/Linux/LinuxTime.cpp
+	# OS / iOS
+	$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSBase.mm>
+
+	# OS / Linux
+	$<${TF_PLATFORM_LINUX}:Common_3/OS/FileSystem/UnixFileSystem.cpp>
+	$<${TF_PLATFORM_LINUX}:Common_3/OS/Linux/LinuxBase.cpp>
+	$<${TF_PLATFORM_LINUX}:Common_3/OS/Linux/LinuxFileSystem.cpp>
+	$<${TF_PLATFORM_LINUX}:Common_3/OS/Linux/LinuxLog.cpp>
+	$<${TF_PLATFORM_LINUX}:Common_3/OS/Linux/LinuxThread.cpp>
+	$<${TF_PLATFORM_LINUX}:Common_3/OS/Linux/LinuxTime.cpp>
 )
 
 # main application - resources
 set(TF_SRC_MAIN_RES)
 
 # main application - common
-set(TF_SRC_MAIN_COMMON
+set(TF_SRC_MAIN
 	Examples_3/Visibility_Buffer/src/Geometry.h
 	Examples_3/Visibility_Buffer/src/Geometry.cpp
-	$<${TF_PLATFORM_OSX}:Middleware_3/ParallelPrimitives/ParallelPrimitives.cpp>
+	Middleware_3/ParallelPrimitives/ParallelPrimitives.cpp
+
 	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.h>
 	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.m>
-)
 
-# main application
-set(TF_SRC_MAIN ${TF_SRC_MAIN_COMMON}
+	$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSAppDelegate.h>
+	$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSAppDelegate.m>
+
 	Examples_3/Visibility_Buffer/src/Visibility_Buffer.cpp
 )
 
-# libs common to all windows render systems
-set(TF_LIB_EXTRA)
-set(TF_BIN_EXTRA)
+set(TF_LINK_LIBS
+	# Common
+	gainputstatic
+	SpirvTools
 
-# rendersystem extra libs
-set(TF_LIB_RENDERDEPS
-	$<${TF_PLATFORM_WINDOWS}:${TF_LIB_RENDERDEPS_WIN}>
-	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_LIB_RENDERDEPS_WIN_DX}>
-)
-set(TF_LIB_RENDERDEPS_WIN
-	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/ags/ags_lib/lib/amd_ags_x64.lib
-	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/nvapi/amd64/nvapi64.lib
-)
-set(TF_LIB_RENDERDEPS_WIN_DX
-	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64/dxcompiler.lib
-	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.lib
-	dxgi.lib
-	d3dcompiler.lib
+	# Windows
+	$<${TF_PLATFORM_WINDOWS}:Common_3/ThirdParty/OpenSource/ags/ags_lib/lib/amd_ags_x64.lib>
+	$<${TF_PLATFORM_WINDOWS}:Common_3/ThirdParty/OpenSource/nvapi/amd64/nvapi64.lib>
+
+	# Linux
+	$<${TF_PLATFORM_LINUX}:pthread>
+	$<${TF_PLATFORM_LINUX}:X11>
+	$<${TF_PLATFORM_LINUX}:Xrandr>
+
+	# OSX
+	$<${TF_PLATFORM_OSX}:Foundation>
+	$<${TF_PLATFORM_OSX}:AVFoundation>
+	$<${TF_PLATFORM_OSX}:MetalPerformanceShaders>
+	$<${TF_PLATFORM_OSX}:ModelIO>
+	$<${TF_PLATFORM_OSX}:Metal>
+	$<${TF_PLATFORM_OSX}:QuartzCore>
+	$<${TF_PLATFORM_OSX}:IOKit>
+	$<${TF_PLATFORM_OSX}:CoreGraphics>
+	$<${TF_PLATFORM_OSX}:AppKit>
+	$<${TF_PLATFORM_OSX}:MetalKit>
+
+	# Vulkan
+	$<${TF_RENDERER_VULKAN}:Vulkan::Vulkan>
+
+	# DX - Common
+	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64/dxcompiler.lib>
+	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:Common_3/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.lib>
+	#$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:dxgi.lib>
+	#$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:d3dcompiler.lib>
 )
 
-set(TF_OSX_FRAMEWORKS
-	"-framework Foundation"
-	"-framework AVFoundation"
-	"-framework MetalPerformanceShaders"
-	"-framework ModelIO"
-	"-framework Metal"
-	"-framework QuartzCore"
-	"-framework IOKit"
-	"-framework CoreGraphics"
-	"-framework AppKit"
-	"-framework MetalKit"
+set(TF_COPY_DLLS
+	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/bin/x64/dxcompiler.dll>
+	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:Common_3/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.dll>
 )
 
-# rendersystem extra dlls
-set(TF_DLL_RENDERDEPS
-	
-)
-set(TF_DLL_RENDERDEPS_WIN
-	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/ags/ags_lib/lib/amd_ags_x64.dll
-)
-set(TF_DLL_RENDERDEPS_WIN_DX
-	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/bin/x64/dxcompiler.dll
-	${CMAKE_SOURCE_DIR}/Common_3/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.dll
+set(TF_SRC_UNITY_BUILD
+	${TF_SRC_OS}
 )
 
 #
@@ -362,49 +369,6 @@ else()
 	add_executable(${TF_TARGET_NAME} ${TF_SRC_MAIN})
 endif()
 # properties for this target are resolved after all other dependencies
-
-#
-# tools
-
-# gainputstatic
-set(GAINPUT_BUILD_STATIC ON CACHE INTERNAL "gainput: forced subdirectory option")
-set(GAINPUT_BUILD_SHARED OFF CACHE INTERNAL "gainput: forced subdirectory option")
-set(GAINPUT_SAMPLES OFF CACHE INTERNAL "gainput: forced subdirectory option")
-set(GAINPUT_TESTS OFF CACHE INTERNAL "gainput: forced subdirectory option")
-mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS)
-add_subdirectory(Common_3/ThirdParty/OpenSource/gainput)
-target_compile_options(gainputstatic PUBLIC ${TF_OBJC_FLAGS})
-target_compile_definitions(gainputstatic PUBLIC ${TF_RENDERER})
-target_link_libraries(gainputstatic ${TF_LIB_XINPUT})
-list(APPEND TF_LINK_LIBS gainputstatic)
-
-# SpirvTools
-add_library(SpirvTools ${TF_SRC_SPIRVTOOLS})
-target_compile_definitions(SpirvTools PUBLIC ${TF_RENDERER})
-list(APPEND TF_LINK_LIBS SpirvTools)
-
-#
-# OS (platform library)
-
-if (TF_PLATFORM_OSX)
-	list(APPEND TF_SRC_OS ${TF_SRC_OS_OSX})
-elseif (TF_PLATFORM_LINUX)
-	list(APPEND TF_SRC_OS ${TF_SRC_OS_LIN})
-elseif (TF_PLATFORM_WINDOWS)
-	list(APPEND TF_SRC_OS ${TF_SRC_OS_WIN})
-endif()
-
-add_library(OS ${TF_SRC_OS})
-target_compile_options(OS PUBLIC ${TF_ARC_FLAGS} ${TF_OBJC_FLAGS})
-target_compile_definitions(OS PUBLIC ${TF_RENDERER})
-message(WARNING ${TF_LINK_LIBS})
-target_link_libraries(OS
-	${TF_LINK_LIBS}
-	$<${TF_PLATFORM_LINUX}:pthread>
-	$<${TF_PLATFORM_LINUX}:X11>
-	$<${TF_PLATFORM_LINUX}:Xrandr>
-)
-list(APPEND TF_LINK_LIBS OS)
 
 foreach(tf_source IN ITEMS ${TF_SRC_OS})
     get_filename_component(tf_path "${tf_source}" PATH)

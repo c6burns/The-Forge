@@ -365,7 +365,12 @@ set(TF_SRC_UNITY_BUILD
 )
 add_library(TheForge ${TF_SRC_UNITY_BUILD})
 target_compile_definitions(TheForge PUBLIC ${TF_RENDERER})
-set_target_properties(TheForge PROPERTIES XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_WEAK ON)
+target_compile_options(TheForge PUBLIC ${TF_ARC_FLAGS})
+set_target_properties(TheForge
+	PROPERTIES
+		XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+		XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_WEAK YES
+)
 
 # mark certain files as objective-c / objective-c++
 set(TF_SRC_OBJC

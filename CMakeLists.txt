@@ -1,161 +1,21 @@
 cmake_minimum_required(VERSION 3.15)
-cmake_policy(SET CMP0079 NEW)
-set(CMAKE_CXX_STANDARD 14)
-
-if (NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Debug)
-endif()
+set(TF_PROJ_NAME TheForge)
+project(${TF_PROJ_NAME} LANGUAGES C CXX)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
+include(tf_functions)
 
 #
-# setup
+# dependencies
 
-set(TF_TARGET_NAME TheForge)
-project(${TF_TARGET_NAME} LANGUAGES C CXX)
-
-set(TF_PLATFORM_WINDOWS 0)
-set(TF_PLATFORM_OSX 0)
-set(TF_PLATFORM_IOS 0)
-set(TF_PLATFORM_LINUX 0)
-if (IOS)
-	set(TF_PLATFORM "IOS")
-	set(TF_PLATFORM_IOS 1)
-elseif (APPLE)
-	set(TF_PLATFORM "OSX")
-	set(TF_PLATFORM_OSX 1)
-elseif (UNIX)
-	set(TF_PLATFORM "LINUX")
-	set(TF_PLATFORM_LINUX 1)
-elseif (WIN32)
-	set(TF_PLATFORM "WINDOWS")
-	set(TF_PLATFORM_WINDOWS 1)
-else()
-	message(FATAL_ERROR "Unsupported platform")
-endif()
-
-set(TF_LINK_LIBS)
-set(TF_OBJC_FLAGS $<${TF_PLATFORM_OSX}:-x objective-c++>)
-set(TF_ARC_FLAGS $<${TF_PLATFORM_OSX}:-fobjc-arc>)
-set(TF_LIB_XINPUT $<${TF_PLATFORM_WINDOWS}:xinput.lib>)
-
-set(TF_RENDERER_DIR_VALID)
-set(TF_RENDERER_DIR)
-set(TF_RENDERER_VALID)
-set(TF_RENDERER)
-set(TF_RENDERER_VULKAN 0)
-set(TF_RENDERER_METAL 0)
-set(TF_RENDERER_DX12 0)
-set(TF_RENDERER_DX11 0)
-if (TF_PLATFORM_OSX)
-	set(TF_RENDERER "METAL")
-	set(TF_RENDERER_METAL 1)
-	set(TF_RENDERER_VALID "METAL" "VULKAN")
-	set(TF_RENDERER_DIR_VALID "Metal" "Vulkan")
-elseif (TF_PLATFORM_WINDOWS)
-	set(TF_RENDERER "VULKAN")
-	set(TF_RENDERER_VULKAN 1)
-	set(TF_RENDERER_VALID "VULKAN" "DIRECT3D12" "DIRECT3D11")
-	set(TF_RENDERER_DIR_VALID "Vulkan" "D3D12" "D3D11")
-elseif (TF_PLATFORM_LINUX)
-	set(TF_RENDERER "VULKAN")
-	set(TF_RENDERER_VULKAN 1)
-	set(TF_RENDERER_VALID "VULKAN")
-	set(TF_RENDERER_DIR_VALID "Vulkan")
-else()
-	message(FATAL_ERROR "Unsupported build platform")
-endif()
-
-list(FIND TF_RENDERER_VALID ${TF_RENDERER} tf_valid_idx)
-if (tf_valid_idx LESS 0)
-	message(FATAL_ERROR "Invalid renderer: '${TF_RENDERER}'")
-endif()
-list(GET TF_RENDERER_DIR_VALID ${tf_valid_idx} TF_RENDERER_DIR)
-
-message("Building: ${TF_PLATFORM} / ${TF_RENDERER}")
-
-set(TF_DIR_COMMON ${CMAKE_CURRENT_SOURCE_DIR}/Common_3)
-set(TF_DIR_RENDER ${TF_DIR_COMMON}/Renderer)
-set(TF_DIR_OS ${TF_DIR_COMMON}/OS)
-set(TF_DIR_TOOLS ${TF_DIR_COMMON}/Tools)
-set(TF_DIR_OSS ${TF_DIR_COMMON}/ThirdParty/OpenSource)
-set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
-
-find_package(Vulkan)
-if (TF_PLATFORM_OSX)
-	find_library(TF_LIB_METAL Metal)
-	find_library(TF_LIB_METALKIT MetalKit)
-	find_library(TF_LIB_METALPS MetalPerformanceShaders)
-	find_library(TF_LIB_GRAPHICS CoreGraphics)
-	find_library(TF_LIB_IOKIT IOKit)
-	find_library(TF_LIB_APPKIT AppKit)
-	find_library(TF_LIB_QUARTZ QuartzCore)
-	find_library(TF_LIB_CONTROLLER GameController)
-endif()
-
-#
-# functions
-
-# create target and add postbuild copy
-function(tf_add_executable)
-	cmake_parse_arguments(TF_PB "" "TARGET;DESTINATION" "SOURCES;RESOURCES" ${ARGN})
-
-	set(TF_SRC_TARGET
-		${TF_PB_SOURCES}
-		$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.h>
-		$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.m>
-		$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSAppDelegate.h>
-		$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSAppDelegate.m>
-	)
-	set(TF_RESDIR_TARGET ${TF_PB_DESTINATION}$<${TF_PLATFORM_OSX}:/../Resources>)
-	set(TF_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/CMake/Info.plist)
-	set(TF_XIB_IN ${CMAKE_CURRENT_SOURCE_DIR}/CMake/MainMenu.xib)
-	set(TF_XIB ${CMAKE_CURRENT_BINARY_DIR}/${TF_PB_TARGET}/MainMenu.xib)
-	configure_file(${TF_XIB_IN} ${TF_XIB})
-	add_executable(${TF_PB_TARGET} ${TF_SRC_TARGET} $<${TF_PLATFORM_OSX}:${TF_PLIST} ${TF_XIB}>)
-	set_target_properties(${TF_PB_TARGET}
-		PROPERTIES
-			MACOSX_BUNDLE TRUE
-			MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/CMake/Info.plist
-			RESOURCE ${TF_XIB}
-	)
-	target_compile_options(${TF_PB_TARGET} PRIVATE ${TF_OBJC_FLAGS} ${TF_ARC_FLAGS})
-	target_compile_definitions(${TF_PB_TARGET} PUBLIC ${TF_RENDERER})
-	target_link_libraries(${TF_PB_TARGET} ${TF_LINK_LIBS})
-
-	set(TF_RES_TARGET)
-	foreach(tf_res IN LISTS TF_PB_RESOURCES)
-		message("RES: ${tf_res}")
-
-		string(REPLACE "${TF_RENDERER_DIR}/" "" tf_res_tmp ${tf_res})
-		get_filename_component(tf_res_dir_tmp ${tf_res_tmp} DIRECTORY)
-		get_filename_component(tf_res_dir ${tf_res_dir_tmp} NAME)
-		file(GLOB tf_res_glob ${tf_res})
-		
-		if (tf_res_dir STREQUAL Fonts)
-			message("RES IS FONT")
-			add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts
-			)
-			set(TF_FONT_DIRS)
-			file(GLOB tf_tmp_dirs ${TF_DIR_ART}/Fonts/*)
-			foreach(tf_tmp_dir IN ITEMS ${tf_tmp_dirs})
-				if (IS_DIRECTORY ${tf_tmp_dir})
-					file(GLOB tf_tmp_glob ${tf_tmp_dir}/*)
-					get_filename_component(tf_out_dir ${tf_tmp_dir} NAME)
-					message("RES IS FONT: ${tf_out_dir}")
-					add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
-						COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
-						COMMAND ${CMAKE_COMMAND} -E copy_if_different ${tf_tmp_glob} ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
-					)
-				endif()
-			endforeach()
-		else()
-			add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/${tf_res_dir}
-				COMMAND ${CMAKE_COMMAND} -E copy_if_different ${tf_res_glob} ${TF_RESDIR_TARGET}/${tf_res_dir}
-			)
-		endif()
-	endforeach()
-endfunction()
+# gainput
+set(GAINPUT_BUILD_STATIC ON CACHE INTERNAL "gainput: forced subdirectory option")
+set(GAINPUT_BUILD_SHARED OFF CACHE INTERNAL "gainput: forced subdirectory option")
+set(GAINPUT_SAMPLES OFF CACHE INTERNAL "gainput: forced subdirectory option")
+set(GAINPUT_TESTS OFF CACHE INTERNAL "gainput: forced subdirectory option")
+mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS APPKIT FOUNDATION GAME_CONTROLLER IOKIT)
+add_subdirectory(Common_3/ThirdParty/OpenSource/gainput)
+target_compile_options(gainputstatic PUBLIC ${TF_OBJC_FLAGS})
+target_link_libraries(gainputstatic $<${TF_PLATFORM_WINDOWS}:xinput.lib>)
 
 #
 # sources
@@ -226,24 +86,6 @@ set(TF_SRC_SPIRVTOOLS
 	Common_3/Tools/SpirvTools/SpirvTools.h
 	Common_3/Tools/SpirvTools/SpirvTools.cpp
 )
-
-# gainput - dependency
-# file(GLOB_RECURSE TF_SRC_GAINPUT ${TF_DIR_OSS}/gainput/lib/source/*.cpp ${TF_DIR_OSS}/gainput/lib/source/*.h ${TF_DIR_OSS}/gainput/lib/include/*.h)
-# if(APPLE)
-# 	file(GLOB_RECURSE TF_MMSRC_GAINPUT ${TF_DIR_OSS}/gainput/lib/source/*.mm)
-# 	set(TF_SRC_GAINPUT ${TF_SRC_GAINPUT} ${TF_MMSRC_GAINPUT})
-# endif()
-# add_library(gainputstatic ${TF_SRC_GAINPUT})
-# target_compile_definitions(gainputstatic PUBLIC -x -objective-c++ -fobjc-arc)
-# gainputstatic
-set(GAINPUT_BUILD_STATIC ON CACHE INTERNAL "gainput: forced subdirectory option")
-set(GAINPUT_BUILD_SHARED OFF CACHE INTERNAL "gainput: forced subdirectory option")
-set(GAINPUT_SAMPLES OFF CACHE INTERNAL "gainput: forced subdirectory option")
-set(GAINPUT_TESTS OFF CACHE INTERNAL "gainput: forced subdirectory option")
-mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS APPKIT FOUNDATION GAME_CONTROLLER IOKIT)
-add_subdirectory(Common_3/ThirdParty/OpenSource/gainput)
-target_compile_options(gainputstatic PUBLIC ${TF_OBJC_FLAGS})
-target_link_libraries(gainputstatic $<${TF_PLATFORM_WINDOWS}:xinput.lib>)
 
 # ozz-animation - dependency
 include_directories(${TF_DIR_OSS}/ozz-animation/src ${TF_DIR_OSS}/ozz-animation/include)
@@ -436,27 +278,29 @@ set(TF_SRC_OS
 	$<${TF_PLATFORM_LINUX}:Common_3/OS/Linux/LinuxTime.cpp>
 )
 
-# the unified source of everything outside of the main application
+# unified source of everything outside executables
 set(TF_SRC_UNITY_BUILD
 	${TF_SRC_SPIRVTOOLS}
 	${TF_SRC_OS}
 	${TF_SRC_RENDERER}
 )
-add_library(TheForge ${TF_SRC_UNITY_BUILD})
-target_compile_definitions(TheForge PUBLIC ${TF_RENDERER})
-target_compile_options(TheForge PUBLIC ${TF_ARC_FLAGS})
-set_target_properties(TheForge
+
+# add the main library target
+add_library(${TF_PROJ_NAME} ${TF_SRC_UNITY_BUILD})
+target_compile_definitions(${TF_PROJ_NAME} PUBLIC ${TF_RENDERER})
+target_compile_options(${TF_PROJ_NAME} PUBLIC ${TF_ARC_FLAGS})
+set_target_properties(${TF_PROJ_NAME}
 	PROPERTIES
 		XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
 		XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_WEAK YES
 )
-target_link_libraries(TheForge
+target_link_libraries(${TF_PROJ_NAME}
 	gainputstatic
 	$<${TF_RENDERER_VULKAN}:Vulkan::Vulkan>
 	$<${TF_PLATFORM_LINUX}:dl>
 )
 
-# mark certain files as objective-c / objective-c++
+# mark certain files as objective-c++
 set(TF_SRC_OBJC
 	${TF_DIR_OSS}/gainput/lib/source/gainput/mouse/GainputInputDeviceMouse.cpp
 	Common_3/OS/Input/InputSystem.cpp
@@ -475,7 +319,6 @@ set(TF_SRC_ARC
 )
 if (TF_PLATFORM_OSX)
 	set_source_files_properties(${TF_SRC_OBJC} PROPERTIES COMPILE_FLAGS "-x objective-c++")
-	# set_source_files_properties(${TF_SRC_ARC} PROPERTIES COMPILE_FLAGS "-fobjc-arc")
 endif()
 
 # drop each source file into its own folder in the IDE
@@ -485,21 +328,9 @@ foreach(tf_source IN ITEMS ${TF_SRC_UNITY_BUILD})
     source_group("${tf_group_path}" FILES "${tf_source}")
 endforeach()
 
-# main application - resources
-set(TF_SRC_MAIN_RES)
-
-# main application - common
-set(TF_SRC_MAIN
-	${TF_SRC_UNITY_BUILD}
-
-	Examples_3/Visibility_Buffer/src/Geometry.h
-	Examples_3/Visibility_Buffer/src/Geometry.cpp
-
-	Examples_3/Visibility_Buffer/src/Visibility_Buffer.cpp
-)
-
+# link libraries - anything that runs will link these
 set(TF_LINK_LIBS
-	TheForge
+	${TF_PROJ_NAME}
 
 	# Windows
 	$<${TF_PLATFORM_WINDOWS}:${TF_DIR_OSS}/ags/ags_lib/lib/amd_ags_x64.lib>
@@ -527,15 +358,21 @@ set(TF_LINK_LIBS
 	#$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:d3dcompiler.lib>
 )
 
-set(TF_COPY_DLLS
+set(TF_LINK_BINS
+	$<${TF_PLATFORM_WINDOWS}:${TF_DIR_OSS}/ags/ags_lib/lib/amd_ags_x64.dll>
 	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_DIR_OSS}/DirectXShaderCompiler/bin/x64/dxcompiler.dll>
 	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_DIR_OSS}/winpixeventruntime/bin/WinPixEventRuntime.dll>
 )
 
 #
-# runtime
+# runtimes
 
 # Visibility_Buffer
+set(TF_SRC_VBUF
+	Examples_3/Visibility_Buffer/src/Geometry.h
+	Examples_3/Visibility_Buffer/src/Geometry.cpp
+	Examples_3/Visibility_Buffer/src/Visibility_Buffer.cpp
+)
 set(TF_RESDIR_TARGET $<TARGET_FILE_DIR:${TF_TARGET_NAME}>)
 #if (TF_PLATFORM_OSX)
 #	set(TF_RESDIR_TARGET ${TF_RESDIR_TARGET}/../Resources)

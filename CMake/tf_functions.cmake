@@ -133,7 +133,7 @@ function(tf_add_executable)
 	set_target_properties(${TF_PB_TARGET}
 		PROPERTIES
 			MACOSX_BUNDLE TRUE
-			MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/CMake/Info.plist
+			MACOSX_BUNDLE_INFO_PLIST ${TF_PLIST}
 			RESOURCE ${TF_XIB}
 	)
 	target_compile_options(${TF_PB_TARGET} PRIVATE ${TF_OBJC_FLAGS} ${TF_ARC_FLAGS})

@@ -243,6 +243,7 @@ set(GAINPUT_TESTS OFF CACHE INTERNAL "gainput: forced subdirectory option")
 mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS APPKIT FOUNDATION GAME_CONTROLLER IOKIT)
 add_subdirectory(Common_3/ThirdParty/OpenSource/gainput)
 target_compile_options(gainputstatic PUBLIC ${TF_OBJC_FLAGS})
+target_link_libraries(gainputstatic $<${TF_PLATFORM_WINDOWS}:xinput.lib>)
 
 # ozz-animation - dependency
 include_directories(${TF_DIR_OSS}/ozz-animation/src ${TF_DIR_OSS}/ozz-animation/include)
@@ -451,6 +452,7 @@ set_target_properties(TheForge
 )
 target_link_libraries(TheForge
 	gainputstatic
+	$<${TF_RENDERER_VULKAN}:Vulkan::Vulkan>
 	$<${TF_PLATFORM_LINUX}:dl>
 )
 
@@ -500,14 +502,13 @@ set(TF_LINK_LIBS
 	TheForge
 
 	# Windows
-	$<${TF_PLATFORM_WINDOWS}:Common_3/ThirdParty/OpenSource/ags/ags_lib/lib/amd_ags_x64.lib>
-	$<${TF_PLATFORM_WINDOWS}:Common_3/ThirdParty/OpenSource/nvapi/amd64/nvapi64.lib>
+	$<${TF_PLATFORM_WINDOWS}:${TF_DIR_OSS}/ags/ags_lib/lib/amd_ags_x64.lib>
+	$<${TF_PLATFORM_WINDOWS}:${TF_DIR_OSS}/nvapi/amd64/nvapi64.lib>
 
 	# Linux
 	$<${TF_PLATFORM_LINUX}:pthread>
 	$<${TF_PLATFORM_LINUX}:X11>
 	$<${TF_PLATFORM_LINUX}:Xrandr>
-	#$<${TF_PLATFORM_LINUX}:dl>
 
 	# OSX
 	$<${TF_PLATFORM_OSX}:${TF_LIB_METAL}>
@@ -519,19 +520,16 @@ set(TF_LINK_LIBS
 	$<${TF_PLATFORM_OSX}:${TF_LIB_APPKIT}>
 	$<${TF_PLATFORM_OSX}:${TF_LIB_CONTROLLER}>
 
-	# Vulkan
-	$<${TF_RENDERER_VULKAN}:Vulkan::Vulkan>
-
 	# DX - Common
-	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64/dxcompiler.lib>
-	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:Common_3/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.lib>
+	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_DIR_OSS}/DirectXShaderCompiler/lib/x64/dxcompiler.lib>
+	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_DIR_OSS}/winpixeventruntime/bin/WinPixEventRuntime.lib>
 	#$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:dxgi.lib>
 	#$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:d3dcompiler.lib>
 )
 
 set(TF_COPY_DLLS
-	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:Common_3/ThirdParty/OpenSource/DirectXShaderCompiler/bin/x64/dxcompiler.dll>
-	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:Common_3/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.dll>
+	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_DIR_OSS}/DirectXShaderCompiler/bin/x64/dxcompiler.dll>
+	$<$<OR:${TF_RENDERER_DX11},${TF_RENDERER_DX12}>:${TF_DIR_OSS}/winpixeventruntime/bin/WinPixEventRuntime.dll>
 )
 
 #

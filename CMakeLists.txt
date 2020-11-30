@@ -80,6 +80,82 @@ set(TF_DIR_OSS ${TF_DIR_COMMON}/ThirdParty/OpenSource)
 set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
 
 find_package(Vulkan)
+if (TF_PLATFORM_OSX)
+	find_library(TF_LIB_METAL Metal)
+	find_library(TF_LIB_METALKIT MetalKit)
+	find_library(TF_LIB_METALPS MetalPerformanceShaders)
+	find_library(TF_LIB_GRAPHICS CoreGraphics)
+	find_library(TF_LIB_IOKIT IOKit)
+	find_library(TF_LIB_APPKIT AppKit)
+	find_library(TF_LIB_QUARTZ QuartzCore)
+	find_library(TF_LIB_CONTROLLER GameController)
+endif()
+
+#
+# functions
+
+# create target and add postbuild copy
+function(tf_add_executable)
+	cmake_parse_arguments(TF_PB "" "TARGET;DESTINATION" "SOURCES;RESOURCES" ${ARGN})
+
+	set(TF_SRC_TARGET
+		${TF_PB_SOURCES}
+		$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.h>
+		$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.m>
+		$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSAppDelegate.h>
+		$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSAppDelegate.m>
+	)
+	set(TF_RESDIR_TARGET ${TF_PB_DESTINATION}$<${TF_PLATFORM_OSX}:/../Resources>)
+	set(TF_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/CMake/Info.plist)
+	set(TF_XIB_IN ${CMAKE_CURRENT_SOURCE_DIR}/CMake/MainMenu.xib)
+	set(TF_XIB ${CMAKE_CURRENT_BINARY_DIR}/${TF_PB_TARGET}/MainMenu.xib)
+	configure_file(${TF_XIB_IN} ${TF_XIB})
+	add_executable(${TF_PB_TARGET} ${TF_SRC_TARGET} $<${TF_PLATFORM_OSX}:${TF_PLIST} ${TF_XIB}>)
+	set_target_properties(${TF_PB_TARGET}
+		PROPERTIES
+			MACOSX_BUNDLE TRUE
+			MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/CMake/Info.plist
+			RESOURCE ${TF_XIB}
+	)
+	target_compile_options(${TF_PB_TARGET} PRIVATE ${TF_OBJC_FLAGS} ${TF_ARC_FLAGS})
+	target_compile_definitions(${TF_PB_TARGET} PUBLIC ${TF_RENDERER})
+	target_link_libraries(${TF_PB_TARGET} ${TF_LINK_LIBS})
+
+	set(TF_RES_TARGET)
+	foreach(tf_res IN LISTS TF_PB_RESOURCES)
+		message("RES: ${tf_res}")
+
+		string(REPLACE "${TF_RENDERER_DIR}/" "" tf_res_tmp ${tf_res})
+		get_filename_component(tf_res_dir_tmp ${tf_res_tmp} DIRECTORY)
+		get_filename_component(tf_res_dir ${tf_res_dir_tmp} NAME)
+		file(GLOB tf_res_glob ${tf_res})
+		
+		if (tf_res_dir STREQUAL Fonts)
+			message("RES IS FONT")
+			add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts
+			)
+			set(TF_FONT_DIRS)
+			file(GLOB tf_tmp_dirs ${TF_DIR_ART}/Fonts/*)
+			foreach(tf_tmp_dir IN ITEMS ${tf_tmp_dirs})
+				if (IS_DIRECTORY ${tf_tmp_dir})
+					file(GLOB tf_tmp_glob ${tf_tmp_dir}/*)
+					get_filename_component(tf_out_dir ${tf_tmp_dir} NAME)
+					message("RES IS FONT: ${tf_out_dir}")
+					add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
+						COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
+						COMMAND ${CMAKE_COMMAND} -E copy_if_different ${tf_tmp_glob} ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
+					)
+				endif()
+			endforeach()
+		else()
+			add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/${tf_res_dir}
+				COMMAND ${CMAKE_COMMAND} -E copy_if_different ${tf_res_glob} ${TF_RESDIR_TARGET}/${tf_res_dir}
+			)
+		endif()
+	endforeach()
+endfunction()
 
 #
 # sources
@@ -420,16 +496,6 @@ set(TF_SRC_MAIN
 	Examples_3/Visibility_Buffer/src/Visibility_Buffer.cpp
 )
 
-if (TF_PLATFORM_OSX)
-	find_library(TF_LIB_METAL Metal)
-	find_library(TF_LIB_METALKIT MetalKit)
-	find_library(TF_LIB_METALPS MetalPerformanceShaders)
-	find_library(TF_LIB_GRAPHICS CoreGraphics)
-	find_library(TF_LIB_IOKIT IOKit)
-	find_library(TF_LIB_APPKIT AppKit)
-	find_library(TF_LIB_QUARTZ QuartzCore)
-	find_library(TF_LIB_CONTROLLER GameController)
-endif()
 set(TF_LINK_LIBS
 	TheForge
 
@@ -571,73 +637,17 @@ endif()
 set(TF_TARGET_NAME 01_Transformations)
 set(TF_DIR_ART ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
 set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
-set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
-file(GLOB TF_SRC_MESHES ${TF_DIR_ART}/Meshes/*)
-file(GLOB TF_SRC_SKY ${TF_DIR_ART}/Textures/Skybox_*.dds)
-file(GLOB TF_SRC_CPAD ${TF_DIR_ART}/Textures/circlepad.dds)
-file(GLOB TF_SRC_TEXTURES ${TF_SRC_SKY} ${TF_SRC_CPAD})
-file(GLOB TF_SRC_TTF ${TF_DIR_PROJ}/Resources/Fonts/*.ttf)
-file(GLOB TF_SRC_OTF ${TF_DIR_PROJ}/Resources/Fonts/*.otf)
-file(GLOB TF_SRC_GPUCFGS ${TF_DIR_PROJ}/GPUCfg/*)
-file(GLOB TF_SRC_SHADERS ${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*)
-file(GLOB TF_UI_SHADERS ${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*)
-file(GLOB TF_TEXT_SHADERS ${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*)
-set(TF_SRC_TARGET
-	${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
-	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.h>
-	$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.m>
-	$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSAppDelegate.h>
-	$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSAppDelegate.m>
-)
-set(TF_RESDIR_TARGET $<TARGET_FILE_DIR:${TF_TARGET_NAME}>)
-if (TF_PLATFORM_OSX)
-	set(TF_RESDIR_TARGET ${TF_RESDIR_TARGET}/../Resources)
-	set(TF_DIR_XCODEPROJ "Examples_3/Unit_Tests/macOS Xcode/${TF_TARGET_NAME}/${TF_TARGET_NAME}")
-	set(TF_SRC_RES ${TF_DIR_XCODEPROJ}/Base.lproj/MainMenu.xib)
-	add_executable(${TF_TARGET_NAME} MACOSX_BUNDLE ${TF_SRC_TARGET} ${TF_SRC_RES})
-	set(TF_BUNDLE_IDENTIFIER com.confetti.Unit-Tests.01-Transformations)
-	set_target_properties(${TF_TARGET_NAME} 
-		PROPERTIES
-		MACOSX_BUNDLE_INFO_PLIST 
-			"${CMAKE_CURRENT_SOURCE_DIR}/CMake/Info.plist.in"
-		RESOURCE 
-			${TF_SRC_RES}
-	)
-	target_sources(${TF_TARGET_NAME} PRIVATE ${TF_DIR_XCODEPROJ}/Assets.xcassets)
-	set_source_files_properties(${TF_DIR_XCODEPROJ}/Assets.xcassets PROPERTIES
-		MACOSX_PACKAGE_LOCATION Resources
-	)
-else()
-	add_executable(${TF_TARGET_NAME} ${TF_SRC_TARGET})
-endif()
-target_compile_options(${TF_TARGET_NAME} PUBLIC ${TF_OBJC_FLAGS} ${TF_ARC_FLAGS})
-target_compile_definitions(${TF_TARGET_NAME} PUBLIC ${TF_RENDERER} ZIP_STATIC)
-target_link_libraries(${TF_TARGET_NAME} ${TF_LINK_LIBS})
-add_custom_command(
+tf_add_executable(
 	TARGET ${TF_TARGET_NAME}
-	POST_BUILD
-	
-	COMMAND echo "${TF_RESDIR_TARGET}"
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Textures
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Shaders
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/GPUCfg
-	
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_TEXTURES} ${TF_RESDIR_TARGET}/Textures
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_GPUCFGS} ${TF_RESDIR_TARGET}/GPUCfg
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_SRC_SHADERS} ${TF_RESDIR_TARGET}/Shaders
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_UI_SHADERS} ${TF_RESDIR_TARGET}/Shaders
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_TEXT_SHADERS} ${TF_RESDIR_TARGET}/Shaders
+	DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
+	SOURCES ${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
+	RESOURCES
+		${TF_DIR_ART}/Meshes/*
+		${TF_DIR_ART}/Textures/Skybox_*.dds
+		${TF_DIR_ART}/Textures/circlepad.dds
+		${TF_DIR_PROJ}/Resources/Fonts/*
+		${TF_DIR_PROJ}/GPUCfg/*
+		${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*
+		${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
+		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
 )
-set(TF_FONT_DIRS)
-file(GLOB tf_tmp_dirs ${TF_DIR_ART}/Fonts/*)
-foreach(tf_tmp_dir IN ITEMS ${tf_tmp_dirs})
-	if (IS_DIRECTORY ${tf_tmp_dir})
-		file(GLOB tf_tmp_glob ${tf_tmp_dir}/*)
-		get_filename_component(tf_out_dir ${tf_tmp_dir} NAME)
-		add_custom_command(TARGET ${TF_TARGET_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${tf_tmp_glob} ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
-		)
-	endif()
-endforeach()

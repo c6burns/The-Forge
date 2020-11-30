@@ -7,13 +7,20 @@ include(tf_functions)
 #
 # dependencies
 
+# gtest/gmock
+set(BUILD_GMOCK ON CACHE INTERNAL "gtest: forced subdirectory option")
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "gtest: forced subdirectory option")
+set(INSTALL_GTEST OFF CACHE INTERNAL "gtest: forced subdirectory option")
+mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS APPKIT FOUNDATION GAME_CONTROLLER IOKIT)
+add_subdirectory(${TF_DIR_OSS}/googletest)
+
 # gainput
 set(GAINPUT_BUILD_STATIC ON CACHE INTERNAL "gainput: forced subdirectory option")
 set(GAINPUT_BUILD_SHARED OFF CACHE INTERNAL "gainput: forced subdirectory option")
 set(GAINPUT_SAMPLES OFF CACHE INTERNAL "gainput: forced subdirectory option")
 set(GAINPUT_TESTS OFF CACHE INTERNAL "gainput: forced subdirectory option")
 mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS APPKIT FOUNDATION GAME_CONTROLLER IOKIT)
-add_subdirectory(Common_3/ThirdParty/OpenSource/gainput)
+add_subdirectory(${TF_DIR_OSS}/gainput)
 target_compile_options(gainputstatic PUBLIC ${TF_OBJC_FLAGS})
 target_link_libraries(gainputstatic $<${TF_PLATFORM_WINDOWS}:xinput.lib>)
 

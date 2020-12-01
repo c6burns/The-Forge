@@ -472,8 +472,9 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_DIR_PROJ}/Resources/cameraPath.bin ${TF_RESDIR_TARGET}/cameraPath.bin
 )
 endif()
+
 #
-# Unit Tests
+# Tests
 
 # 01_Transformations
 set(TF_TARGET_NAME 01_Transformations)
@@ -493,3 +494,23 @@ tf_add_executable(
 		${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
 		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
 )
+
+# playground
+set(TF_TARGET_NAME playground)
+set(TF_DIR_ART ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
+set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/01_Transformations)
+tf_add_executable(
+	TARGET ${TF_TARGET_NAME}
+	DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
+	SOURCES ${TF_DIR_TESTS}/${TF_TARGET_NAME}.cpp
+	RESOURCES
+		${TF_DIR_ART}/Meshes/*
+		${TF_DIR_ART}/Textures/Skybox_*.dds
+		${TF_DIR_ART}/Textures/circlepad.dds
+		${TF_DIR_PROJ}/Resources/Fonts/*
+		${TF_DIR_PROJ}/GPUCfg/*
+		${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*
+		${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
+		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
+)
+target_link_libraries(${TF_TARGET_NAME} gtest gtest_main gmock gmock_main)

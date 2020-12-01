@@ -88,6 +88,7 @@ set(TF_DIR_OS ${TF_DIR_COMMON}/OS)
 set(TF_DIR_TOOLS ${TF_DIR_COMMON}/Tools)
 set(TF_DIR_OSS ${TF_DIR_COMMON}/ThirdParty/OpenSource)
 set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
+set(TF_DIR_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/Tests)
 
 #
 # find packages and libraries

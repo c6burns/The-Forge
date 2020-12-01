@@ -7,13 +7,20 @@ include(tf_functions)
 #
 # dependencies
 
+# gtest/gmock
+set(BUILD_GMOCK ON CACHE INTERNAL "gtest: forced subdirectory option")
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "gtest: forced subdirectory option")
+set(INSTALL_GTEST OFF CACHE INTERNAL "gtest: forced subdirectory option")
+mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS APPKIT FOUNDATION GAME_CONTROLLER IOKIT)
+add_subdirectory(${TF_DIR_OSS}/googletest)
+
 # gainput
 set(GAINPUT_BUILD_STATIC ON CACHE INTERNAL "gainput: forced subdirectory option")
 set(GAINPUT_BUILD_SHARED OFF CACHE INTERNAL "gainput: forced subdirectory option")
 set(GAINPUT_SAMPLES OFF CACHE INTERNAL "gainput: forced subdirectory option")
 set(GAINPUT_TESTS OFF CACHE INTERNAL "gainput: forced subdirectory option")
 mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS APPKIT FOUNDATION GAME_CONTROLLER IOKIT)
-add_subdirectory(Common_3/ThirdParty/OpenSource/gainput)
+add_subdirectory(${TF_DIR_OSS}/gainput)
 target_compile_options(gainputstatic PUBLIC ${TF_OBJC_FLAGS})
 target_link_libraries(gainputstatic $<${TF_PLATFORM_WINDOWS}:xinput.lib>)
 
@@ -465,8 +472,9 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_DIR_PROJ}/Resources/cameraPath.bin ${TF_RESDIR_TARGET}/cameraPath.bin
 )
 endif()
+
 #
-# Unit Tests
+# Tests
 
 # 01_Transformations
 set(TF_TARGET_NAME 01_Transformations)
@@ -486,3 +494,24 @@ tf_add_executable(
 		${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
 		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
 )
+
+# playground
+set(TF_TARGET_NAME playground)
+set(TF_DIR_ART ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
+set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/01_Transformations)
+tf_add_executable(
+	TARGET ${TF_TARGET_NAME}
+	TEST YES
+	DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
+	SOURCES ${TF_DIR_TESTS}/${TF_TARGET_NAME}.cpp
+	RESOURCES
+		${TF_DIR_ART}/Meshes/*
+		${TF_DIR_ART}/Textures/Skybox_*.dds
+		${TF_DIR_ART}/Textures/circlepad.dds
+		${TF_DIR_PROJ}/Resources/Fonts/*
+		${TF_DIR_PROJ}/GPUCfg/*
+		${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*
+		${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
+		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
+)
+target_link_libraries(${TF_TARGET_NAME} gtest gtest_main gmock gmock_main)

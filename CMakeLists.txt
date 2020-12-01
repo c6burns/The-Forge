@@ -501,6 +501,7 @@ set(TF_DIR_ART ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResourc
 set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/01_Transformations)
 tf_add_executable(
 	TARGET ${TF_TARGET_NAME}
+	TEST YES
 	DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
 	SOURCES ${TF_DIR_TESTS}/${TF_TARGET_NAME}.cpp
 	RESOURCES

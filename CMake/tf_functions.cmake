@@ -116,7 +116,7 @@ endif()
 
 # create target and add postbuild copy
 function(tf_add_executable)
-	cmake_parse_arguments(TF_PB "" "TARGET;DESTINATION" "SOURCES;RESOURCES" ${ARGN})
+	cmake_parse_arguments(TF_PB "TEST" "TARGET;DESTINATION" "SOURCES;RESOURCES" ${ARGN})
 
 	set(TF_SRC_TARGET
 		${TF_PB_SOURCES}
@@ -131,12 +131,14 @@ function(tf_add_executable)
 	set(TF_XIB ${CMAKE_CURRENT_BINARY_DIR}/${TF_PB_TARGET}/MainMenu.xib)
 	configure_file(${TF_XIB_IN} ${TF_XIB})
 	add_executable(${TF_PB_TARGET} ${TF_SRC_TARGET} $<${TF_PLATFORM_OSX}:${TF_PLIST} ${TF_XIB}>)
-	set_target_properties(${TF_PB_TARGET}
-		PROPERTIES
-			MACOSX_BUNDLE TRUE
-			MACOSX_BUNDLE_INFO_PLIST ${TF_PLIST}
-			RESOURCE ${TF_XIB}
-	)
+	if (NOT TF_PB_TEST)
+		set_target_properties(${TF_PB_TARGET}
+			PROPERTIES
+				MACOSX_BUNDLE TRUE
+				MACOSX_BUNDLE_INFO_PLIST ${TF_PLIST}
+				RESOURCE ${TF_XIB}
+		)
+	endif()
 	target_compile_options(${TF_PB_TARGET} PRIVATE ${TF_OBJC_FLAGS} ${TF_ARC_FLAGS})
 	target_compile_definitions(${TF_PB_TARGET} PUBLIC ${TF_RENDERER})
 	target_link_libraries(${TF_PB_TARGET} ${TF_LINK_LIBS})

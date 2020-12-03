@@ -118,6 +118,7 @@ endif()
 function(tf_add_executable)
 	cmake_parse_arguments(TF_PB "TEST" "TARGET;DESTINATION" "SOURCES;RESOURCES" ${ARGN})
 
+	set(tf_outdir ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${TF_PB_TARGET})
 	set(TF_SRC_TARGET
 		${TF_PB_SOURCES}
 		$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.h>
@@ -137,11 +138,28 @@ function(tf_add_executable)
 				MACOSX_BUNDLE TRUE
 				MACOSX_BUNDLE_INFO_PLIST ${TF_PLIST}
 				RESOURCE ${TF_XIB}
+				RUNTIME_OUTPUT_DIRECTORY ${tf_outdir}
 		)
 	endif()
 	target_compile_options(${TF_PB_TARGET} PRIVATE ${TF_OBJC_FLAGS} ${TF_ARC_FLAGS})
 	target_compile_definitions(${TF_PB_TARGET} PUBLIC ${TF_RENDERER})
 	target_link_libraries(${TF_PB_TARGET} ${TF_LINK_LIBS})
+
+	# copy fonts
+	add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${TF_DIR_FONT} ${TF_RESDIR_TARGET}/Fonts/
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${TF_DIR_FONT} ${tf_outdir}/Fonts/
+	)
+	#file(GLOB tf_font_subdirs ${TF_DIR_FONT}/*)
+	#foreach(tf_tmp_dirs IN LISTS tf_font_subdirs)
+	#	foreach(tf_tmp_dir IN ITEMS ${tf_tmp_dirs})
+	#		if (IS_DIRECTORY ${tf_tmp_dir})
+	#			add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
+	#				COMMAND ${CMAKE_COMMAND} -E copy_directory ${tf_tmp_glob} ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
+	#			)
+	#		endif()
+	#	endforeach()
+	#endforeach()
 
 	foreach(tf_res IN LISTS TF_PB_RESOURCES)
 		string(REPLACE "${TF_RENDERER_DIR}/" "" tf_res_tmp ${tf_res})
@@ -149,25 +167,12 @@ function(tf_add_executable)
 		get_filename_component(tf_res_dir ${tf_res_dir_tmp} NAME)
 		file(GLOB tf_res_glob ${tf_res})
 		
-		if (tf_res_dir STREQUAL Fonts)
-			add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts
-			)
-			file(GLOB tf_tmp_dirs ${TF_DIR_ART}/Fonts/*)
-			foreach(tf_tmp_dir IN ITEMS ${tf_tmp_dirs})
-				if (IS_DIRECTORY ${tf_tmp_dir})
-					file(GLOB tf_tmp_glob ${tf_tmp_dir}/*)
-					get_filename_component(tf_out_dir ${tf_tmp_dir} NAME)
-					add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
-						COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
-						COMMAND ${CMAKE_COMMAND} -E copy_if_different ${tf_tmp_glob} ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
-					)
-				endif()
-			endforeach()
+		if (NOT tf_res_glob)
+			message(WARNING "Empty GLOB from pattern: ${tf_res}")
 		else()
 			add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
 				COMMAND ${CMAKE_COMMAND} -E make_directory ${TF_RESDIR_TARGET}/${tf_res_dir}
-				COMMAND ${CMAKE_COMMAND} -E copy_if_different ${tf_res_glob} ${TF_RESDIR_TARGET}/${tf_res_dir}
+				COMMAND ${CMAKE_COMMAND} -E copy ${tf_res_glob} ${TF_RESDIR_TARGET}/${tf_res_dir}
 			)
 		endif()
 	endforeach()
@@ -175,15 +180,34 @@ function(tf_add_executable)
 	# copy windows binaries
 	if (TF_PLATFORM_WINDOWS)
 		add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_DIR_OSS}/ags/ags_lib/lib/amd_ags_x64.dll ${TF_RESDIR_TARGET}/
+			COMMAND ${CMAKE_COMMAND} -E copy ${TF_DIR_OSS}/ags/ags_lib/lib/amd_ags_x64.dll ${TF_RESDIR_TARGET}/
 		)
 	endif()
 
 	# copy directx binaries
 	if (TF_RENDERER_DX11 OR TF_RENDERER_DX12)
 		add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_DIR_OSS}/DirectXShaderCompiler/bin/x64/dxcompiler.dll ${TF_RESDIR_TARGET}/
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TF_DIR_OSS}/winpixeventruntime/bin/WinPixEventRuntime.dll ${TF_RESDIR_TARGET}/
+			COMMAND ${CMAKE_COMMAND} -E copy ${TF_DIR_OSS}/DirectXShaderCompiler/bin/x64/dxcompiler.dll ${TF_RESDIR_TARGET}/
+			COMMAND ${CMAKE_COMMAND} -E copy ${TF_DIR_OSS}/winpixeventruntime/bin/WinPixEventRuntime.dll ${TF_RESDIR_TARGET}/
+		)
+	endif()
+endfunction()
+
+# create target and add postbuild copy
+function(tf_add_resource tf_ar_target tf_ar_globpattern tf_ar_destination)
+	if (IS_DIRECTORY ${tf_ar_globpattern})
+		set(tf_outdir ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${TF_PB_TARGET})
+		add_custom_command(TARGET ${tf_ar_target} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_directory ${tf_ar_globpattern} ${tf_ar_destination}
+		)
+	else()
+		file(GLOB tf_ar_glob ${tf_ar_globpattern})
+		if (NOT tf_ar_glob)
+			message(WARNING "nothing found for GLOB: ${tf_ar_globpattern}")
+		endif()
+		add_custom_command(TARGET ${tf_ar_target} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E make_directory ${tf_ar_destination}
+			COMMAND ${CMAKE_COMMAND} -E copy ${tf_ar_glob} ${tf_ar_destination}/
 		)
 	endif()
 endfunction()

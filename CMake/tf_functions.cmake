@@ -147,7 +147,7 @@ function(tf_add_executable)
 	target_compile_options(${TF_PB_TARGET} PRIVATE ${TF_OBJC_FLAGS} ${TF_ARC_FLAGS})
 	target_compile_definitions(${TF_PB_TARGET} PUBLIC ${TF_RENDERER})
 	target_link_libraries(${TF_PB_TARGET} ${TF_LINK_LIBS})
-	target_include_directories(${TF_PB_TARGET}
+	target_include_directories(${TF_PB_TARGET} PRIVATE
 		${TF_DIR_COMMON}
 		${TF_DIR_MW}
 	)

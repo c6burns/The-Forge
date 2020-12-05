@@ -585,9 +585,9 @@ tf_add_executable(
 		${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
 		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
 )
-tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_ART}/Hair $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Meshes/Hair)
 tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_PROJ}/*.lua $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Scripts)
 tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_ART}/PBR $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures/PBR/)
+tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_RES}/Animation $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Animation/)
 
 set(TF_TARGET_NAME 07_Tessellation)
 set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)

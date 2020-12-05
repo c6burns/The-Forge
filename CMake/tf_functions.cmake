@@ -1,6 +1,9 @@
 #
 # functions and setup file for The-Forge
 
+ADD_DEFINITIONS(-DUNICODE)
+ADD_DEFINITIONS(-D_UNICODE)
+
 #
 # platform discovery
 

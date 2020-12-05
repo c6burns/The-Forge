@@ -22,7 +22,10 @@ set(GAINPUT_TESTS OFF CACHE INTERNAL "gainput: forced subdirectory option")
 mark_as_advanced(GAINPUT_BUILD_STATIC GAINPUT_BUILD_SHARED GAINPUT_SAMPLES GAINPUT_TESTS APPKIT FOUNDATION GAME_CONTROLLER IOKIT)
 add_subdirectory(${TF_DIR_OSS}/gainput)
 target_compile_options(gainputstatic PUBLIC ${TF_OBJC_FLAGS})
-target_link_libraries(gainputstatic $<${TF_PLATFORM_WINDOWS}:xinput.lib>)
+target_link_libraries(gainputstatic 
+	$<${TF_PLATFORM_WINDOWS}:xinput.lib>
+	$<${TF_PLATFORM_WINDOWS}:ws2_32.lib>
+)
 
 # lua
 file(GLOB TF_SRC_LUA Common_3/ThirdParty/OpenSource/lua-5.3.5/src/*)

@@ -153,20 +153,12 @@ function(tf_add_executable)
 	)
 
 	# copy fonts
-	add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${TF_DIR_FONT} ${TF_RESDIR_TARGET}/Fonts/
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${TF_DIR_FONT} ${tf_outdir}/Fonts/
-	)
-	#file(GLOB tf_font_subdirs ${TF_DIR_FONT}/*)
-	#foreach(tf_tmp_dirs IN LISTS tf_font_subdirs)
-	#	foreach(tf_tmp_dir IN ITEMS ${tf_tmp_dirs})
-	#		if (IS_DIRECTORY ${tf_tmp_dir})
-	#			add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
-	#				COMMAND ${CMAKE_COMMAND} -E copy_directory ${tf_tmp_glob} ${TF_RESDIR_TARGET}/Fonts/${tf_out_dir}
-	#			)
-	#		endif()
-	#	endforeach()
-	#endforeach()
+	if (NOT TF_PB_TEST)
+		add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_directory ${TF_DIR_FONT} ${TF_RESDIR_TARGET}/Fonts/
+			COMMAND ${CMAKE_COMMAND} -E copy_directory ${TF_DIR_FONT} ${tf_outdir}/Fonts/
+		)
+	endif()
 
 	foreach(tf_res IN LISTS TF_PB_RESOURCES)
 		string(REPLACE "${TF_RENDERER_DIR}/" "" tf_res_tmp ${tf_res})

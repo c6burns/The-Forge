@@ -26,7 +26,6 @@ TEST_F(MyFixture, FileModeStringConversion)
 	EXPECT_EQ(FM_READ, fsFileModeFromString(fsFileModeToString(FM_READ))) << "FM_READ";
 	EXPECT_EQ(FM_WRITE, fsFileModeFromString(fsFileModeToString(FM_WRITE))) << "FM_WRITE";
 	EXPECT_EQ(FM_APPEND, fsFileModeFromString(fsFileModeToString(FM_APPEND))) << "FM_APPEND";
-	EXPECT_EQ(FM_BINARY, fsFileModeFromString(fsFileModeToString(FM_BINARY))) << "FM_BINARY";
 	EXPECT_EQ(FM_READ_WRITE, fsFileModeFromString(fsFileModeToString(FM_READ_WRITE))) << "FM_READ_WRITE";
 	EXPECT_EQ(FM_READ_APPEND, fsFileModeFromString(fsFileModeToString(FM_READ_APPEND))) << "FM_READ_APPEND";
 	EXPECT_EQ(FM_WRITE_BINARY, fsFileModeFromString(fsFileModeToString(FM_WRITE_BINARY))) << "FM_WRITE_BINARY";

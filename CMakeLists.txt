@@ -683,6 +683,20 @@ tf_add_executable(
 )
 endif()
 
+set(TF_TARGET_NAME 13_UserInterface)
+set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
+set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
+tf_add_executable(
+	TARGET ${TF_TARGET_NAME}
+	DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
+	SOURCES ${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
+	RESOURCES
+		${TF_DIR_PROJ}/GPUCfg/*
+		${TF_DIR_RES}/Textures/sprites.dds
+		${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
+		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
+)
+
 set(TF_TARGET_NAME 32_Window)
 set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
 set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})

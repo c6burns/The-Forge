@@ -55,8 +55,8 @@ if (TF_PLATFORM_OSX)
 	set(TF_RENDERER_VALID "METAL" "VULKAN")
 	set(TF_RENDERER_DIR_VALID "Metal" "Vulkan")
 elseif (TF_PLATFORM_WINDOWS)
-	set(TF_RENDERER "VULKAN")
-	set(TF_RENDERER_VULKAN 1)
+	set(TF_RENDERER "DIRECT3D11")
+	set(TF_RENDERER_DX11 1)
 	set(TF_RENDERER_VALID "VULKAN" "DIRECT3D12" "DIRECT3D11")
 	set(TF_RENDERER_DIR_VALID "Vulkan" "D3D12" "D3D11")
 elseif (TF_PLATFORM_LINUX)
@@ -77,7 +77,9 @@ if (NOT TF_RENDERER_DIR)
 	message(FATAL_ERROR "Unable to find directory for renderer: ${TF_RENDERER}")
 endif()
 
-message(NOTICE "Building: ${TF_PLATFORM} / ${TF_RENDERER}")
+message(NOTICE "Building The Forge: ${TF_PLATFORM} / ${TF_RENDERER}")
+set(TF_RENDERER ${TF_RENDERER} PARENT_SCOPE)
+set(TF_RENDERER_DIR ${TF_RENDERER_DIR} PARENT_SCOPE)
 
 #
 # setup variables
@@ -92,6 +94,7 @@ set(TF_DIR_TOOLS ${TF_DIR_COMMON}/Tools)
 set(TF_DIR_OSS ${TF_DIR_COMMON}/ThirdParty/OpenSource)
 set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
 set(TF_DIR_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/Tests)
+set(TF_DIR_CMAKE ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 
 #
 # find packages and libraries
@@ -119,22 +122,34 @@ endif()
 
 # create target and add postbuild copy
 function(tf_add_executable)
-	cmake_parse_arguments(TF_PB "TEST" "TARGET;DESTINATION" "SOURCES;RESOURCES" ${ARGN})
+	cmake_parse_arguments(TF_PB "TEST" "TARGET;DESTINATION;SOURCEDIR" "SOURCES;RESOURCES" ${ARGN})
+
+	if (NOT TF_PB_SOURCEDIR)
+		set(TF_PB_SOURCEDIR ${CMAKE_CURRENT_SOURCE_DIR})
+	endif()
+	set(TF_PB_DIR_FONT ${TF_PB_SOURCEDIR}/Examples_3/Unit_Tests/UnitTestResources/Fonts)
 
 	set(tf_outdir ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${TF_PB_TARGET})
-	set(TF_SRC_TARGET
-		${TF_PB_SOURCES}
-		$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.h>
-		$<${TF_PLATFORM_OSX}:Common_3/OS/Darwin/macOSAppDelegate.m>
-		$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSAppDelegate.h>
-		$<${TF_PLATFORM_IOS}:Common_3/OS/Darwin/iOSAppDelegate.m>
-	)
-	set(TF_RESDIR_TARGET ${TF_PB_DESTINATION}$<${TF_PLATFORM_OSX}:/../Resources>)
-	set(TF_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/CMake/templates/Info.plist)
-	set(TF_XIB_IN ${CMAKE_CURRENT_SOURCE_DIR}/CMake/templates/MainMenu.xib)
+	set(TF_SRC_TARGET ${TF_PB_SOURCES})
+	set(TF_RESDIR_TARGET ${TF_PB_DESTINATION})
+	set(TF_PLIST ${TF_PB_SOURCEDIR}/CMake/templates/Info.plist)
+	set(TF_XIB_IN ${TF_PB_SOURCEDIR}/CMake/templates/MainMenu.xib)
 	set(TF_XIB ${CMAKE_CURRENT_BINARY_DIR}/xib/${TF_PB_TARGET}/MainMenu.xib)
 	configure_file(${TF_XIB_IN} ${TF_XIB})
-	add_executable(${TF_PB_TARGET} ${TF_SRC_TARGET} $<${TF_PLATFORM_OSX}:${TF_PLIST} ${TF_XIB}>)
+
+	if (APPLE)
+		set(TF_RESDIR_TARGET ${TF_RESDIR_TARGET}/../Resources)
+		set(TF_SRC_TARGET ${TF_SRC_TARGET}
+			${TF_PB_SOURCEDIR}/Common_3/OS/Darwin/macOSAppDelegate.h
+			${TF_PB_SOURCEDIR}/Common_3/OS/Darwin/macOSAppDelegate.m
+			${TF_PB_SOURCEDIR}/Common_3/OS/Darwin/iOSAppDelegate.h
+			${TF_PB_SOURCEDIR}/Common_3/OS/Darwin/iOSAppDelegate.m
+			${TF_PLIST}
+			${TF_XIB}
+		)
+	endif()
+
+	add_executable(${TF_PB_TARGET} ${TF_SRC_TARGET})
 	if (NOT TF_PB_TEST)
 		set_target_properties(${TF_PB_TARGET}
 			PROPERTIES
@@ -144,19 +159,21 @@ function(tf_add_executable)
 				RUNTIME_OUTPUT_DIRECTORY ${tf_outdir}
 		)
 	endif()
+	
 	target_compile_options(${TF_PB_TARGET} PRIVATE ${TF_OBJC_FLAGS} ${TF_ARC_FLAGS})
 	target_compile_definitions(${TF_PB_TARGET} PUBLIC ${TF_RENDERER})
 	target_link_libraries(${TF_PB_TARGET} ${TF_LINK_LIBS})
 	target_include_directories(${TF_PB_TARGET} PRIVATE
-		${TF_DIR_COMMON}
-		${TF_DIR_MW}
+		${TF_PB_SOURCEDIR}
+		${TF_PB_SOURCEDIR}/Common_3
+		${TF_PB_SOURCEDIR}/Middleware_3
 	)
 
 	# copy fonts
 	if (NOT TF_PB_TEST)
 		add_custom_command(TARGET ${TF_PB_TARGET} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_directory ${TF_DIR_FONT} ${TF_RESDIR_TARGET}/Fonts/
-			COMMAND ${CMAKE_COMMAND} -E copy_directory ${TF_DIR_FONT} ${tf_outdir}/Fonts/
+			COMMAND ${CMAKE_COMMAND} -E copy_directory ${TF_PB_DIR_FONT} ${TF_RESDIR_TARGET}/Fonts/
+			COMMAND ${CMAKE_COMMAND} -E copy_directory ${TF_PB_DIR_FONT} ${tf_outdir}/Fonts/
 		)
 	endif()
 

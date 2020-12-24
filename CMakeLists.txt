@@ -43,7 +43,12 @@ set(TF_SRC_RENDERER_COMMON
 	Common_3/Renderer/CommonShaderReflection.cpp
 	Common_3/Renderer/ResourceLoader.cpp
 )
-source_group("RendererCommon" FILES ${TF_SRC_RENDERER_METAL})
+set(TF_SRC_RENDERER_D3D11
+	Common_3/Renderer/Direct3D11/Direct3D11.cpp
+	Common_3/Renderer/Direct3D11/Direct3D11Commands.h
+	Common_3/Renderer/Direct3D11/Direct3D11Raytracing.cpp
+	Common_3/Renderer/Direct3D11/Direct3D11ShaderReflection.cpp
+)
 set(TF_SRC_RENDERER_D3D12 
 	Common_3/Renderer/Direct3D12/Direct3D12CapBuilder.h
 	Common_3/Renderer/Direct3D12/Direct3D12Hooks.h
@@ -52,14 +57,12 @@ set(TF_SRC_RENDERER_D3D12
 	Common_3/Renderer/Direct3D12/Direct3D12Raytracing.cpp
 	Common_3/Renderer/Direct3D12/Direct3D12ShaderReflection.cpp
 )
-source_group("RendererVulkan" FILES ${TF_SRC_RENDERER_METAL})
 set(TF_SRC_RENDERER_VULKAN 
 	Common_3/Renderer/Vulkan/VulkanCapsBuilder.h
 	Common_3/Renderer/Vulkan/Vulkan.cpp
 	Common_3/Renderer/Vulkan/VulkanRaytracing.cpp
 	Common_3/Renderer/Vulkan/VulkanShaderReflection.cpp
 )
-source_group("RendererMetal" FILES ${TF_SRC_RENDERER_METAL})
 set(TF_SRC_RENDERER_METAL 
 	Common_3/Renderer/Metal/MetalAvailabilityMacros.h
 	Common_3/Renderer/Metal/MetalCapBuilder.h
@@ -69,13 +72,35 @@ set(TF_SRC_RENDERER_METAL
 	Common_3/Renderer/Metal/MetalRenderer.mm
 	Common_3/Renderer/Metal/MetalShaderReflection.mm
 )
-source_group("RendererDX12" FILES ${TF_SRC_RENDERER_METAL})
-set (TF_SRC_RENDERER
-	${TF_SRC_RENDERER_COMMON}
-	$<${TF_RENDERER_DX12}:${TF_SRC_RENDERER_D3D12}>
-	$<${TF_RENDERER_VULKAN}:${TF_SRC_RENDERER_VULKAN}>
-	$<${TF_RENDERER_METAL}:${TF_SRC_RENDERER_METAL}>
-)
+
+if (TF_RENDERER_VULKAN)
+	add_library(RendererVulkan ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_VULKAN})
+	target_compile_definitions(RendererVulkan PRIVATE VULKAN _UNICODE UNICODE)
+	target_link_libraries(RendererVulkan Vulkan::Vulkan)
+endif()
+
+if (TF_RENDERER_DX11)
+	add_library(RendererDX11 ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_D3D11})
+	target_compile_definitions(RendererDX11 PRIVATE DIRECT3D11 _UNICODE UNICODE)
+endif()
+
+if (TF_RENDERER_DX12)
+	add_library(RendererDX12 ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_D3D12})
+	target_include_directories(RendererDX12 PRIVATE ${Vulkan_INCLUDE_DIRS})
+	#target_link_libraries(RendererDX12 Vulkan::Vulkan)
+	target_compile_definitions(RendererDX12 PRIVATE DIRECT3D12 _UNICODE UNICODE)
+endif()
+
+if (TF_RENDERER_METAL)
+	add_library(RendererMetal ${TF_SRC_RENDERER_COMMON} ${TF_SRC_RENDERER_METAL})
+	target_compile_definitions(RendererMetal PRIVATE METAL _UNICODE UNICODE)
+	set (TF_SRC_RENDERER
+		${TF_SRC_RENDERER_COMMON}
+		$<${TF_RENDERER_DX12}:${TF_SRC_RENDERER_D3D12}>
+		$<${TF_RENDERER_VULKAN}:${TF_SRC_RENDERER_VULKAN}>
+		$<${TF_RENDERER_METAL}:${TF_SRC_RENDERER_METAL}>
+	)
+endif()
 
 # SpirvTools - dependency
 set(TF_SRC_SPIRVTOOLS
@@ -92,7 +117,9 @@ set(TF_SRC_SPIRVTOOLS
 	Common_3/Tools/SpirvTools/SpirvTools.h
 	Common_3/Tools/SpirvTools/SpirvTools.cpp
 )
-source_group("SpirvTools" FILES ${TF_SRC_SPIRVTOOLS})
+add_library(SpirvTools ${TF_SRC_SPIRVTOOLS})
+target_compile_definitions(SpirvTools PRIVATE VULKAN _UNICODE UNICODE)
+target_link_libraries(SpirvTools Vulkan::Vulkan)
 
 # ozzanimation - dependency
 include_directories(${TF_DIR_OSS}/ozz-animation/src ${TF_DIR_OSS}/ozz-animation/include)
@@ -132,15 +159,22 @@ set(TF_SRC_OZZ_BASE
 	${TF_DIR_OSS}/ozz-animation/src/base/memory/allocator.cc
 	${TF_DIR_OSS}/ozz-animation/src/base/platform.cc
 )
-set(TF_SRC_OZZ
-	${TF_SRC_OZZ_OFFLINE}
-	${TF_SRC_OZZ_RUNTIME}
-	${TF_SRC_OZZ_BASE}
+add_library(ozz_base ${TF_SRC_OZZ_BASE})
+target_compile_definitions(ozz_base PRIVATE _MBCS)
+add_library(ozz_animation_offline ${TF_SRC_OZZ_OFFLINE})
+target_compile_definitions(ozz_animation_offline PRIVATE _CRT_SECURE_NO_WARNINGS _MBCS)
+add_library(ozz_animation ${TF_SRC_OZZ_RUNTIME})
+target_compile_definitions(ozz_animation PRIVATE _CRT_SECURE_NO_WARNINGS _MBCS)
+
+set(TF_SRC_LUA
+	Middleware_3/LUA/LuaManager.h
+	Middleware_3/LUA/LuaManagerCommon.h
+	Middleware_3/LUA/LuaManagerImpl.h
+	Middleware_3/LUA/LuaManager.cpp
+	Middleware_3/LUA/LuaManagerImpl.cpp
 )
-source_group("offline" FILES ${TF_SRC_OZZ_OFFLINE})
-source_group("runtime" FILES ${TF_SRC_OZZ_RUNTIME})
-source_group("base" FILES ${TF_SRC_OZZ_BASE})
-add_library(ozzanimation ${TF_SRC_OZZ})
+add_library(LuaManager ${TF_SRC_LUA})
+target_compile_definitions(LuaManager PRIVATE API_EXPORT _UNICODE UNICODE)
 
 # rmem - dependency
 set(TF_SRC_RMEM
@@ -255,13 +289,6 @@ set(TF_SRC_OS
 	Middleware_3/UI/AppUI.h
 	Middleware_3/UI/AppUI.cpp
 	Middleware_3/UI/ImguiGUIDriver.cpp
-
-	# OS / Middleware / LUA
-	Middleware_3/LUA/LuaManager.h
-	Middleware_3/LUA/LuaManagerCommon.h
-	Middleware_3/LUA/LuaManagerImpl.h
-	Middleware_3/LUA/LuaManager.cpp
-	Middleware_3/LUA/LuaManagerImpl.cpp
 	
 	# OpenSource / imgui
 	Common_3/ThirdParty/OpenSource/imgui/imconfig.h
@@ -324,7 +351,7 @@ set(TF_SRC_COMBINED
 
 # add the main library target
 add_library(${TF_PROJ_NAME} ${TF_SRC_COMBINED})
-target_compile_definitions(${TF_PROJ_NAME} PUBLIC ${TF_RENDERER})
+target_compile_definitions(${TF_PROJ_NAME} PUBLIC ${TF_RENDERER} _UNICODE UNICODE)
 target_compile_options(${TF_PROJ_NAME} PUBLIC ${TF_ARC_FLAGS})
 set_target_properties(${TF_PROJ_NAME}
 	PROPERTIES
@@ -334,7 +361,10 @@ set_target_properties(${TF_PROJ_NAME}
 target_link_libraries(${TF_PROJ_NAME}
 	gainputstatic
 	lua
-	ozzanimation
+	ozz_base
+	ozz_animation_offline
+	ozz_animation
+	LuaManager
 	rmem
 	$<${TF_RENDERER_VULKAN}:Vulkan::Vulkan>
 	$<${TF_PLATFORM_LINUX}:dl>
@@ -431,38 +461,32 @@ set(TF_RESDIR_TARGET $<TARGET_FILE_DIR:${TF_TARGET_NAME}>)
 #
 # handle Art.zip
 
-set(TF_ART_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Art)
-set(TF_ART_FILE ${TF_ART_DIR}.zip)
-if (NOT EXISTS ${TF_ART_FILE})
-	file(DOWNLOAD http://www.conffx.com/Art.zip ${TF_ART_FILE} SHOW_PROGRESS TLS_VERIFY ON)
-endif()
+if (TF_DOWNLOAD_ART)
+	if (NOT EXISTS ${TF_ART_FILE})
+		file(DOWNLOAD http://www.conffx.com/Art.zip ${TF_ART_FILE} SHOW_PROGRESS TLS_VERIFY ON)
+	endif()
 
-if (NOT IS_DIRECTORY ${TF_ART_DIR})
-	if (TF_PLATFORM_WINDOWS)
-		execute_process(
-			COMMAND
-				${CMAKE_CURRENT_SOURCE_DIR}/Tools/7z x Art.zip -y
-			WORKING_DIRECTORY
-				${CMAKE_CURRENT_SOURCE_DIR}
-		)
-	else()
-		execute_process(
-			COMMAND
-				unzip Art.zip
-			WORKING_DIRECTORY
-				${CMAKE_CURRENT_SOURCE_DIR}
-		)
+	if (NOT IS_DIRECTORY ${TF_ART_DIR})
+		if (TF_PLATFORM_WINDOWS)
+			execute_process(
+				COMMAND
+					${CMAKE_CURRENT_SOURCE_DIR}/Tools/7z x Art.zip -y
+				WORKING_DIRECTORY
+					${CMAKE_CURRENT_SOURCE_DIR}
+			)
+		else()
+			execute_process(
+				COMMAND
+					unzip Art.zip
+				WORKING_DIRECTORY
+					${CMAKE_CURRENT_SOURCE_DIR}
+			)
+		endif()
 	endif()
 endif()
 
 #
 # postbuild copy
-
-# var setup
-set(TF_DIR_ART ${CMAKE_CURRENT_SOURCE_DIR}/Art)
-set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Visibility_Buffer)
-set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
-set(TF_DIR_FONT ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources/Fonts)
 
 # Visibility_Buffer
 #set(TF_TARGET_NAME Visibility_Buffer)
@@ -570,28 +594,6 @@ tf_add_executable(
 		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
 )
 
-set(TF_TARGET_NAME 06_MaterialPlayground)
-set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
-set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
-tf_add_executable(
-	TARGET ${TF_TARGET_NAME}
-	DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
-	SOURCES ${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
-	RESOURCES
-		${TF_DIR_RES}/Meshes/*.gltf
-		${TF_DIR_RES}/Meshes/*.bin
-		${TF_DIR_RES}/Textures/Skybox_*.dds
-		${TF_DIR_RES}/Textures/circlepad.dds
-		${TF_DIR_RES}/Textures/LA_Helipad.dds
-		${TF_DIR_PROJ}/GPUCfg/*
-		${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*
-		${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
-		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
-)
-tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_PROJ}/*.lua $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Scripts)
-tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_ART}/PBR $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures/PBR/)
-tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_RES}/Animation $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Animation/)
-
 set(TF_TARGET_NAME 07_Tessellation)
 set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
 set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
@@ -629,42 +631,81 @@ tf_add_executable(
 		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
 )
 
-set(TF_TARGET_NAME 09_LightShadowPlayground)
-set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
-set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
-tf_add_executable(
-	TARGET ${TF_TARGET_NAME}
-	DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
-	SOURCES
-		${TF_DIR_PROJ}/Geometry.cpp
-		${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
-	RESOURCES
-		${TF_ART_DIR}/SanMiguel_3/Meshes/*
-		${TF_ART_DIR}/SanMiguel_3/Textures/*.dds
-		${TF_DIR_PROJ}/GPUCfg/*
-		${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*
-		${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
-		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
-)
+if (TF_DOWNLOAD_ART)
+	set(TF_TARGET_NAME 06_MaterialPlayground)
+	set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
+	set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
+	tf_add_executable(
+		TARGET ${TF_TARGET_NAME}
+		DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
+		SOURCES ${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
+		RESOURCES
+			${TF_DIR_RES}/Meshes/*.gltf
+			${TF_DIR_RES}/Meshes/*.bin
+			${TF_DIR_RES}/Textures/Skybox_*.dds
+			${TF_DIR_RES}/Textures/circlepad.dds
+			${TF_DIR_RES}/Textures/LA_Helipad.dds
+			${TF_DIR_PROJ}/GPUCfg/*
+			${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*
+			${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
+			${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
+	)
+	tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_PROJ}/*.lua $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Scripts)
+	tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_ART}/PBR $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Textures/PBR/)
+	tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_RES}/Animation $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Animation/)
 
-if (0) # skip this one for now
-set(TF_TARGET_NAME 10_ScreenSpaceReflections)
-set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
-set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
-tf_add_executable(
-	TARGET ${TF_TARGET_NAME}
-	DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
-	SOURCES
-		${TF_DIR_PROJ}/Geometry.cpp
-		${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
-	RESOURCES
-		${TF_ART_DIR}/Sponza/Meshes/*
-		${TF_DIR_RES}/Textures/LA_Helipad.dds
-		${TF_DIR_PROJ}/GPUCfg/*
-		${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*
-		${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
-		${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
-)
+	set(TF_TARGET_NAME 09_LightShadowPlayground)
+	set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
+	set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
+	tf_add_executable(
+		TARGET ${TF_TARGET_NAME}
+		DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
+		SOURCES
+			${TF_DIR_PROJ}/Geometry.cpp
+			${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
+		RESOURCES
+			${TF_ART_DIR}/SanMiguel_3/Meshes/*
+			${TF_ART_DIR}/SanMiguel_3/Textures/*.dds
+			${TF_DIR_PROJ}/GPUCfg/*
+			${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*
+			${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
+			${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
+	)
+
+	if (0) # skip this one for now
+		set(TF_TARGET_NAME 10_ScreenSpaceReflections)
+		set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
+		set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
+		tf_add_executable(
+			TARGET ${TF_TARGET_NAME}
+			DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
+			SOURCES
+				${TF_DIR_PROJ}/Geometry.cpp
+				${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
+			RESOURCES
+				${TF_ART_DIR}/Sponza/Meshes/*
+				${TF_DIR_RES}/Textures/LA_Helipad.dds
+				${TF_DIR_PROJ}/GPUCfg/*
+				${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*
+				${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
+				${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
+		)
+	endif()
+
+	set(TF_TARGET_NAME 21_Playback)
+	set(TF_DIR_RES ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources)
+	set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/src/${TF_TARGET_NAME})
+	tf_add_executable(
+		TARGET ${TF_TARGET_NAME}
+		DESTINATION $<TARGET_FILE_DIR:${TF_TARGET_NAME}>
+		SOURCES ${TF_DIR_PROJ}/${TF_TARGET_NAME}.cpp
+		RESOURCES
+			${TF_DIR_PROJ}/GPUCfg/*
+			${TF_DIR_PROJ}/Shaders/${TF_RENDERER_DIR}/*
+			${TF_DIR_MW}/UI/Shaders/${TF_RENDERER_DIR}/*
+			${TF_DIR_MW}/Text/Shaders/${TF_RENDERER_DIR}/*
+	)
+	tf_add_resource(${TF_TARGET_NAME} ${TF_DIR_RES}/Animation $<TARGET_FILE_DIR:${TF_TARGET_NAME}>/Animation/)
 endif()
 
 # playground
@@ -676,3 +717,10 @@ tf_add_executable(
 	SOURCES ${TF_DIR_TESTS}/${TF_TARGET_NAME}.cpp
 )
 target_link_libraries(${TF_TARGET_NAME} gtest gtest_main gmock gmock_main)
+
+#set_target_properties(LibXml2 PROPERTIES FOLDER "deps")
+#set_target_properties(runsuite PROPERTIES FOLDER "tests/LibXml2")
+#set_target_properties(runtest PROPERTIES FOLDER "tests/LibXml2")
+#set_target_properties(runxmlconf PROPERTIES FOLDER "tests/LibXml2")
+#set_target_properties(testapi PROPERTIES FOLDER "tests/LibXml2")
+#set_target_properties(testAutomata PROPERTIES FOLDER "tests/LibXml2")

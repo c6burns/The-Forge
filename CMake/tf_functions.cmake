@@ -1,8 +1,12 @@
 #
 # functions and setup file for The-Forge
 
-ADD_DEFINITIONS(-DUNICODE)
-ADD_DEFINITIONS(-D_UNICODE)
+#
+# CMake options
+set(TF_BUILD_OZZ OFF CACHE BOOL "Toggles the building of ozz-animation")
+set(TF_BUILD_SOUND OFF CACHE BOOL "Toggles the building of soloud")
+set(TF_BUILD_SAMPLES OFF CACHE BOOL "Toggles the building of sample programs")
+set(TF_DOWNLOAD_ART OFF CACHE BOOL "Determines whether or not the Art.zip (1G+) is downloaded")
 
 #
 # platform discovery
@@ -55,8 +59,8 @@ if (TF_PLATFORM_OSX)
 	set(TF_RENDERER_VALID "METAL" "VULKAN")
 	set(TF_RENDERER_DIR_VALID "Metal" "Vulkan")
 elseif (TF_PLATFORM_WINDOWS)
-	set(TF_RENDERER "VULKAN")
-	set(TF_RENDERER_VULKAN 1)
+	set(TF_RENDERER "DIRECT3D11")
+	set(TF_RENDERER_DX11 1)
 	set(TF_RENDERER_VALID "VULKAN" "DIRECT3D12" "DIRECT3D11")
 	set(TF_RENDERER_DIR_VALID "Vulkan" "D3D12" "D3D11")
 elseif (TF_PLATFORM_LINUX)
@@ -92,12 +96,18 @@ set(TF_DIR_TOOLS ${TF_DIR_COMMON}/Tools)
 set(TF_DIR_OSS ${TF_DIR_COMMON}/ThirdParty/OpenSource)
 set(TF_DIR_MW ${CMAKE_CURRENT_SOURCE_DIR}/Middleware_3)
 set(TF_DIR_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/Tests)
+set(TF_DIR_ART ${CMAKE_CURRENT_SOURCE_DIR}/Art)
+set(TF_DIR_PROJ ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Visibility_Buffer)
+set(TF_DIR_FONT ${CMAKE_CURRENT_SOURCE_DIR}/Examples_3/Unit_Tests/UnitTestResources/Fonts)
+
+set(TF_ART_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Art)
+set(TF_ART_FILE ${TF_ART_DIR}.zip)
 
 #
 # find packages and libraries
 
+find_package(Vulkan)
 if (TF_RENDERER_VULKAN)
-	find_package(Vulkan)
 	if (NOT Vulkan_FOUND)
 		message(FATAL_ERROR "Vulkan SDK not found, but Vulkan is the chosen renderer")
 	endif()
@@ -119,7 +129,12 @@ endif()
 
 # create target and add postbuild copy
 function(tf_add_executable)
-	cmake_parse_arguments(TF_PB "TEST" "TARGET;DESTINATION" "SOURCES;RESOURCES" ${ARGN})
+	cmake_parse_arguments(TF_PB "TEST;MBCS" "TARGET;DESTINATION" "SOURCES;RESOURCES" ${ARGN})
+
+	set(tf_string_defs UNICODE _UNICODE)
+	if (TF_PB_MBCS)
+		set(tf_string_defs _MBCS)
+	endif()
 
 	set(tf_outdir ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${TF_PB_TARGET})
 	set(TF_SRC_TARGET
@@ -145,8 +160,14 @@ function(tf_add_executable)
 		)
 	endif()
 	target_compile_options(${TF_PB_TARGET} PRIVATE ${TF_OBJC_FLAGS} ${TF_ARC_FLAGS})
-	target_compile_definitions(${TF_PB_TARGET} PUBLIC ${TF_RENDERER})
-	target_link_libraries(${TF_PB_TARGET} ${TF_LINK_LIBS})
+	target_compile_definitions(${TF_PB_TARGET} PUBLIC ${TF_RENDERER} ${tf_string_defs})
+	target_link_libraries(${TF_PB_TARGET} ${TF_LINK_LIBS}
+		$<${TF_RENDERER_VULKAN}:Vulkan::Vulkan>
+		$<${TF_RENDERER_VULKAN}:RendererVulkan>
+		$<${TF_RENDERER_DX11}:RendererDX11>
+		$<${TF_RENDERER_DX12}:RendererDX12>
+		$<${TF_RENDERER_METAL}:RendererMetal>
+	)
 	target_include_directories(${TF_PB_TARGET} PRIVATE
 		${TF_DIR_COMMON}
 		${TF_DIR_MW}
